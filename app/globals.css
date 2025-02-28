@@ -1,0 +1,169 @@
+/*
+ * Tailwind CSS 指令 - VS Code可能会显示错误，但这是正常的
+ */
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    /* 金镶玉主题 - 浅色模式 */
+    --background: 43 75% 95%; /* #F8F3E6 */
+    --foreground: 36 30% 18%; /* #2A2420 */
+
+    --card: 43 65% 92%; /* #F6F0E0 */
+    --card-foreground: 36 30% 18%; /* #2A2420 */
+ 
+    --popover: 43 75% 95%; /* #F8F3E6 */
+    --popover-foreground: 36 30% 18%; /* #2A2420 */
+ 
+    --primary: 40 60% 55%; /* 金色 */
+    --primary-foreground: 36 30% 18%; /* #2A2420 */
+ 
+    --secondary: 45 60% 90%; /* #F3ECD8 */
+    --secondary-foreground: 36 30% 18%; /* #2A2420 */
+ 
+    --muted: 48 55% 87%; /* #EEE5CC */
+    --muted-foreground: 36 30% 35%; /* 深一点的褐色 */
+ 
+    --accent: 43 75% 95%; /* #F8F3E6 */
+    --accent-foreground: 36 30% 18%; /* #2A2420 */
+ 
+    --destructive: 0 84.2% 60.2%;
+    --destructive-foreground: 43 75% 95%; /* #F8F3E6 */
+
+    --border: 45 60% 90%; /* #F3ECD8 */
+    --input: 45 60% 90%; /* #F3ECD8 */
+    --ring: 40 60% 55%; /* 金色 */
+ 
+    --radius: 1rem;
+  }
+ 
+  .dark {
+    /* 金镶玉主题 - 深色模式 */
+    --background: 36 10% 15%; /* #2A2420 */
+    --foreground: 43 75% 95%; /* #F8F3E6 */
+ 
+    --card: 36 10% 15%; /* #2A2420 */
+    --card-foreground: 43 75% 95%; /* #F8F3E6 */
+ 
+    --popover: 36 10% 15%; /* #2A2420 */
+    --popover-foreground: 43 75% 95%; /* #F8F3E6 */
+ 
+    --primary: 40 60% 55%; /* 金色 */
+    --primary-foreground: 43 75% 95%; /* #F8F3E6 */
+ 
+    --secondary: 33 15% 24%; /* #463C35 */
+    --secondary-foreground: 43 75% 95%; /* #F8F3E6 */
+ 
+    --muted: 32 10% 17%; /* #2F2925 */
+    --muted-foreground: 43 50% 85%; /* 淡一点的米色 */
+ 
+    --accent: 35 12% 20%; /* #352E29 */
+    --accent-foreground: 43 75% 95%; /* #F8F3E6 */
+ 
+    --destructive: 0 62.8% 30.6%;
+    --destructive-foreground: 43 75% 95%; /* #F8F3E6 */
+ 
+    --border: 33 15% 24%; /* #463C35 */
+    --input: 33 15% 24%; /* #463C35 */
+    --ring: 40 60% 55%; /* 金色 */
+    --radius: 1rem;
+  }
+}
+
+/* 附加的金镶玉主题特定样式 */
+.dark .chat-message-user {
+  background-color: #352E29 !important; /* --chat-background-user */
+}
+
+.dark .chat-message-assistant {
+  background-color: #3D3631 !important; /* --chat-background-assistant */
+}
+
+.light .chat-message-user {
+  background-color: #F8F3E6 !important; /* --chat-background-user */
+}
+
+.light .chat-message-assistant {
+  background-color: #F3ECD8 !important; /* --chat-background-assistant */
+}
+
+/* 输入框样式 */
+.input-border-soft {
+  border-color: rgba(0, 0, 0, 0.1) !important;
+}
+
+.dark .input-border-soft {
+  border-color: rgba(255, 255, 255, 0.1) !important;
+}
+
+@layer base {
+  * {
+    @apply border-border;
+    transition: background-color 0.3s ease, border-color 0.3s ease, color 0.2s ease;
+  }
+  body {
+    @apply bg-background text-foreground;
+  }
+}
+
+/* Custom scrollbar */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: hsl(var(--muted-foreground) / 0.3);
+  border-radius: 10px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: hsl(var(--muted-foreground) / 0.5);
+}
+
+/* Chat message animations */
+.chat-message-animation {
+  animation: slideIn 0.4s ease-out;
+}
+
+@keyframes slideIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Thinking dots animation */
+.thinking-dots::after {
+  content: '...';
+  animation: dots 1.5s steps(4, end) infinite;
+  width: 24px;
+  display: inline-block;
+  text-align: left;
+}
+
+@keyframes dots {
+  0%, 20% { content: ''; }
+  40% { content: '.'; }
+  60% { content: '..'; }
+  80% { content: '...'; }
+}
+
+/* 分割线样式 */
+.dark [class*="flex-col"] + div {
+  box-shadow: -1px 0 0 0 rgba(255, 255, 255, 0.08);
+}
+
+[class*="flex-col"] + div {
+  box-shadow: -1px 0 0 0 rgba(0, 0, 0, 0.08);
+}
