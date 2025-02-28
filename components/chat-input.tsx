@@ -1,20 +1,32 @@
 "use client"
 
-import { useState, useRef, useEffect } from "react"
-import { SendHorizontal } from "lucide-react"
+import * as React from "react"
+import { SendHorizontal, StopCircle } from "lucide-react"
 import TextareaAutosize from "react-textarea-autosize"
 import { Button } from "@/components/ui/button"
 import { cn } from "@/lib/utils"
 import { useChat } from "@/context/chat-context"
 
 export function ChatInput() {
-  const { sendMessage, currentConversationId, isLoading } = useChat()
-  const [input, setInput] = useState("")
-  const [isComposing, setIsComposing] = useState(false)
-  const [mounted, setMounted] = useState(false)
-  const textareaRef = useRef<HTMLTextAreaElement>(null)
+  const { sendMessage, currentConversationId, isLoading, conversations } = useChat()
+  const [input, setInput] = React.useState("")
+  const [isComposing, setIsComposing] = React.useState(false)
+  const [mounted, setMounted] = React.useState(false)
+  const textareaRef = React.useRef<HTMLTextAreaElement>(null)
 
-  useEffect(() => {
+  // 获取当前对话
+  const currentConversation = conversations.find(c => c.id === currentConversationId);
+  // 修改这里的逻辑，确保只有当modelId存在且不为空字符串时才认为选择了模型
+  const hasSelectedModel = !!currentConversation?.modelId && currentConversation.modelId !== "";
+  
+  console.log("聊天输入框状态:", { 
+    currentConversationId, 
+    modelId: currentConversation?.modelId,
+    hasSelectedModel,
+    isInputDisabled: !currentConversationId || isLoading || !hasSelectedModel 
+  });
+
+  React.useEffect(() => {
     setMounted(true)
   }, [])
 
@@ -31,14 +43,15 @@ export function ChatInput() {
   }
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
-    if (e.key === "Enter" && !e.shiftKey && !isComposing) {
+    if (e.key === "Enter" && !e.shiftKey && !isComposing && mounted) {
+      if (isLoading || !hasSelectedModel) return
       e.preventDefault()
       handleSend()
     }
   }
 
   const handleSend = () => {
-    if (!input.trim() || isLoading) return
+    if (!input.trim() || isLoading || !hasSelectedModel) return
 
     sendMessage(input)
     setInput("")
@@ -52,39 +65,33 @@ export function ChatInput() {
   return (
     <div className="relative w-full max-w-4xl mx-auto px-4 mb-8">
       <div className="relative flex w-full items-center rounded-full border bg-background shadow-sm">
-        {/* Text input */}
         <TextareaAutosize
           ref={textareaRef}
-          placeholder="请输入您的问题..."
-          className={cn(
-            "flex w-full resize-none border-0 bg-transparent py-3 px-4",
-            "focus-visible:outline-none focus-visible:ring-0 focus-visible:ring-transparent",
-            "disabled:cursor-not-allowed disabled:opacity-50",
-            "text-sm"
-          )}
-          value={input}
-          onChange={handleInputChange}
-          onKeyDown={handleKeyDown}
+          tabIndex={0}
           onCompositionStart={handleCompositionStart}
           onCompositionEnd={handleCompositionEnd}
-          disabled={isLoading}
-          rows={1}
-          maxRows={5}
+          placeholder={hasSelectedModel ? "发送消息..." : "请先选择模型..."}
+          className={cn(
+            "flex-1 bg-transparent px-4 py-3 focus-visible:outline-none disabled:opacity-50 max-h-64 resize-none",
+            (!currentConversationId || !hasSelectedModel) && "opacity-50 cursor-not-allowed"
+          )}
+          value={input}
+          disabled={!currentConversationId || isLoading || !hasSelectedModel}
+          autoFocus
+          onChange={handleInputChange}
+          onKeyDown={handleKeyDown}
         />
-        
-        {/* Send button */}
         <Button
           type="button"
+          size="icon"
+          className="mr-2"
+          disabled={!currentConversationId || isLoading || !input.trim() || !hasSelectedModel}
           onClick={handleSend}
-          variant="ghost"
-          size="sm"
-          disabled={!input.trim() || isLoading}
-          className="h-8 w-8 mr-2 rounded-full bg-transparent text-muted-foreground/70 hover:text-muted-foreground hover:bg-transparent"
         >
-          {mounted ? (
-            <SendHorizontal className={cn("h-4 w-4", isLoading && "animate-pulse")} />
+          {isLoading ? (
+            <StopCircle className="h-5 w-5" />
           ) : (
-            <div className="h-4 w-4" />
+            <SendHorizontal className="h-5 w-5" />
           )}
           <span className="sr-only">发送</span>
         </Button>

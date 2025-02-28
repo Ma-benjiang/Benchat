@@ -1,13 +1,16 @@
 "use client"
 
-import { useEffect, useRef } from "react"
+import React, { useRef, useEffect } from "react"
 import { Avatar, AvatarFallback } from "@/components/ui/avatar"
 import { cn } from "@/lib/utils"
 import { MessageContent } from "@/components/message-content"
 import { useChat } from "@/context/chat-context"
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
+import { RefreshCw, AlertCircle } from "lucide-react"
+import { Button } from "@/components/ui/button"
 
 export function ChatMessages() {
-  const { messages, isLoading } = useChat()
+  const { messages, isLoading, error, resetError } = useChat()
   const messagesEndRef = useRef<HTMLDivElement>(null)
 
   // Scroll to bottom when messages change
@@ -16,7 +19,7 @@ export function ChatMessages() {
   }, [messages])
 
   return (
-    <div className="flex-1 overflow-y-auto px-4 py-4">
+    <div className="flex-1 overflow-y-auto px-4 sm:px-6 py-6">
       {messages.length === 0 ? (
         <div className="flex h-full items-center justify-center">
           <div className="space-y-2 text-center">
@@ -27,12 +30,12 @@ export function ChatMessages() {
           </div>
         </div>
       ) : (
-        <div className="space-y-6 max-w-3xl mx-auto">
+        <div className="max-w-4xl mx-auto">
           {messages.map((message) => (
             <div
               key={message.id}
               className={cn(
-                "flex items-start",
+                "flex items-start gap-4 mb-10",
                 message.role === "user" ? "justify-end" : "justify-start"
               )}
             >
@@ -50,10 +53,10 @@ export function ChatMessages() {
                 )}
                 
                 <div className={cn(
-                  "max-w-[85%] px-4 py-2",
+                  "w-full max-w-[75%] px-6 py-4",
                   message.role === "user" 
                     ? "bg-primary text-primary-foreground chat-bubble-user" 
-                    : "bg-muted chat-bubble-assistant"
+                    : "bg-transparent dark:bg-transparent border-none text-zinc-800 dark:text-zinc-200 chat-bubble-assistant"
                 )}>
                   <MessageContent 
                     message={message}
@@ -95,6 +98,25 @@ export function ChatMessages() {
                 </div>
               </div>
             </div>
+          )}
+          
+          {error && (
+            <Alert variant="destructive" className="mt-4">
+              <AlertCircle className="h-4 w-4" />
+              <AlertTitle>Error</AlertTitle>
+              <AlertDescription>
+                {error}
+                <Button 
+                  variant="outline" 
+                  size="sm" 
+                  className="ml-4" 
+                  onClick={resetError}
+                >
+                  <RefreshCw className="h-4 w-4 mr-2" />
+                  Dismiss
+                </Button>
+              </AlertDescription>
+            </Alert>
           )}
           
           <div ref={messagesEndRef} />

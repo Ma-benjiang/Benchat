@@ -1,4 +1,5 @@
 import { createClient } from '@supabase/supabase-js'
+import { uuid } from './utils'
 
 // These environment variables are typically set in .env.local
 // For a real app, you would properly configure these in your deployment environment
@@ -68,18 +69,40 @@ export async function getMessages(conversationId: string) {
 }
 
 export async function createConversation(userId: string, title: string) {
+  const id = uuid()
   const { data, error } = await supabase
     .from('conversations')
-    .insert([{ user_id: userId, title }])
+    .insert([{ id, user_id: userId, title }])
     .select()
   
-  return { data, error }
+  return { data, error, id }
 }
 
 export async function createMessage(conversationId: string, content: string, role: 'user' | 'assistant') {
   const { data, error } = await supabase
     .from('messages')
     .insert([{ conversation_id: conversationId, content, role }])
+    .select()
+  
+  return { data, error }
+}
+
+export async function deleteConversation(id: string) {
+  // 首先删除与对话相关的所有消息
+  const { error: messagesError } = await supabase
+    .from('messages')
+    .delete()
+    .eq('conversation_id', id)
+  
+  if (messagesError) {
+    return { error: messagesError }
+  }
+  
+  // 然后删除对话本身
+  const { data, error } = await supabase
+    .from('conversations')
+    .delete()
+    .eq('id', id)
     .select()
   
   return { data, error }

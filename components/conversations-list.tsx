@@ -110,7 +110,7 @@ export function ConversationsList() {
                 <div
                   key={conversation.id}
                   className={cn(
-                    "flex items-center justify-between rounded-md px-3 py-2 text-sm transition-colors cursor-pointer",
+                    "flex items-center justify-between rounded-md px-3 py-2 text-sm transition-colors cursor-pointer group",
                     isSelected 
                       ? "bg-gray-100 dark:bg-zinc-800" 
                       : "hover:bg-gray-50 dark:hover:bg-zinc-800/50"
@@ -134,7 +134,7 @@ export function ConversationsList() {
                   <Button
                     variant="ghost"
                     size="icon"
-                    className="h-7 w-7 ml-2 opacity-0 group-hover:opacity-100 hover:opacity-100 focus:opacity-100"
+                    className="h-7 w-7 ml-2 md:opacity-0 group-hover:opacity-100 hover:opacity-100 focus:opacity-100"
                     onClick={(e) => handleDeleteClick(conversation.id, e)}
                   >
                     {mounted && (

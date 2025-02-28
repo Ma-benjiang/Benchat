@@ -5,7 +5,8 @@ A beautiful, feature-rich AI assistant web application inspired by Claude. This 
 ## Features
 
 - 🎨 Beautiful, responsive UI with dark/light mode
-- 💬 Real-time chat interface with AI
+- 💬 Real-time chat interface with multiple AI models via OpenRouter
+- 🤖 Support for multiple AI providers (OpenAI, Anthropic, Gemini, DeepSeek)
 - 👤 User authentication system
 - 📱 Mobile-friendly design
 - 🔒 Secure data handling with Supabase
@@ -16,6 +17,7 @@ A beautiful, feature-rich AI assistant web application inspired by Claude. This 
 - **Frontend**: Next.js, TypeScript, Tailwind CSS, Shadcn UI
 - **Backend**: Supabase (Authentication, Database, Storage)
 - **Deployment**: Vercel
+- **AI Chat**: OpenRouter API
 
 ## Getting Started
 
@@ -24,6 +26,7 @@ A beautiful, feature-rich AI assistant web application inspired by Claude. This 
 - Node.js 16+ 
 - npm or yarn
 - Supabase account (for backend services)
+- OpenRouter API key (for AI chat capabilities)
 
 ### Installation
 
@@ -42,14 +45,21 @@ npm install
 yarn
 ```
 
-3. Create a `.env.local` file in the root directory with your Supabase credentials:
+3. Create a `.env.local` file in the root directory with your credentials:
 
 ```
 NEXT_PUBLIC_SUPABASE_URL=your_supabase_url
 NEXT_PUBLIC_SUPABASE_ANON_KEY=your_supabase_anon_key
+NEXT_PUBLIC_OPENROUTER_API_KEY=your_openrouter_api_key
+NEXT_PUBLIC_SITE_URL=your_site_url
 ```
 
-4. Start the development server:
+4. Get an API key from [OpenRouter](https://openrouter.ai/):
+   - Sign up for an account at [openrouter.ai](https://openrouter.ai/)
+   - Navigate to your dashboard and generate an API key
+   - Add the API key to your `.env.local` file
+
+5. Start the development server:
 
 ```bash
 npm run dev
@@ -57,7 +67,7 @@ npm run dev
 yarn dev
 ```
 
-5. Open [http://localhost:3000](http://localhost:3000) in your browser to see the application.
+6. Open [http://localhost:3000](http://localhost:3000) in your browser to see the application.
 
 ## Project Structure
 
@@ -133,3 +143,4 @@ This project is licensed under the MIT License - see the LICENSE file for detail
 - Inspired by [Claude](https://www.anthropic.com/claude)
 - UI components from [shadcn/ui](https://ui.shadcn.com/)
 - Icons from [Lucide](https://lucide.dev/)
+- AI chat capabilities powered by [OpenRouter](https://openrouter.ai/)

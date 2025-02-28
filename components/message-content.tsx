@@ -10,6 +10,7 @@ import { cn } from '@/lib/utils'
 import { HTMLAttributes } from 'react'
 import { User, Bot } from "lucide-react"
 import { Message, MessageContent as MessageContentType } from '@/context/chat-context'
+import { CodeBlock } from '@/components/code-block'
 
 // 为了解决 SyntaxHighlighter 的 style 属性类型问题
 import type { CSSProperties } from 'react'
@@ -43,16 +44,10 @@ export function MessageContent({ message }: MessageContentProps) {
     const language = match ? match[1] : 'text'
     
     return !inline && match ? (
-      <SyntaxHighlighter
+      <CodeBlock 
         language={language}
-        PreTag="div"
-        style={resolvedTheme === 'dark' ? oneDark : oneLight}
-        wrapLines={true}
-        showLineNumbers={true}
-        {...props as any}
-      >
-        {String(children).replace(/\n$/, '')}
-      </SyntaxHighlighter>
+        value={String(children).replace(/\n$/, '')}
+      />
     ) : (
       <code className={className} {...props}>
         {children}
@@ -89,7 +84,7 @@ export function MessageContent({ message }: MessageContentProps) {
           "prose-headings:font-semibold prose-headings:tracking-tight",
           "prose-h1:text-xl prose-h2:text-lg prose-h3:text-base",
           "prose-p:leading-normal prose-p:my-2",
-          "prose-pre:bg-slate-100 prose-pre:dark:bg-slate-900 prose-pre:p-0",
+          "prose-pre:p-0 prose-pre:border-none prose-pre:bg-transparent prose-pre:my-4 prose-pre:shadow-none prose-pre:box-shadow-none",
           "prose-code:bg-slate-100 prose-code:dark:bg-slate-800 prose-code:font-medium prose-code:rounded prose-code:px-1",
           "break-words overflow-hidden"
         )}
@@ -109,8 +104,40 @@ export function MessageContent({ message }: MessageContentProps) {
   }
 
   return (
-    <div>
-      {renderContent()}
+    <div className="flex gap-3">
+      <div className="flex-shrink-0 mt-1">
+        {message.role === "user" ? (
+          <div className="w-8 h-8 rounded-full bg-blue-500 flex items-center justify-center">
+            <User className="h-5 w-5 text-white" />
+          </div>
+        ) : (
+          <div className="w-8 h-8 rounded-full bg-amber-500 flex items-center justify-center">
+            <Bot className="h-5 w-5 text-white" />
+          </div>
+        )}
+      </div>
+      <div className="flex-1">
+        <div className="text-sm font-medium mb-1">
+          {message.role === "user" ? "你" : "BenChat"}
+          {message.model && message.role === "assistant" && (
+            <span className="ml-2 text-xs text-gray-500 dark:text-gray-400">
+              使用 {message.model}
+            </span>
+          )}
+        </div>
+        <div className={cn(
+          "prose prose-slate dark:prose-invert max-w-none w-full",
+          "prose-headings:font-semibold prose-headings:tracking-tight",
+          "prose-h1:text-xl prose-h2:text-lg prose-h3:text-base",
+          "prose-p:leading-relaxed prose-p:my-3",
+          "prose-ul:my-4 prose-ol:my-4 prose-li:my-2",
+          "prose-pre:p-0 prose-pre:border-none prose-pre:bg-transparent prose-pre:my-4 prose-pre:shadow-none",
+          "prose-code:bg-slate-100 prose-code:dark:bg-slate-800 prose-code:font-medium prose-code:rounded prose-code:px-1",
+          "break-words overflow-hidden"
+        )}>
+          {renderContent()}
+        </div>
+      </div>
     </div>
   )
 }

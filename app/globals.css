@@ -98,13 +98,17 @@
   border-color: rgba(255, 255, 255, 0.1) !important;
 }
 
-/* 新增的聊天气泡样式 */
+/* 聊天气泡样式 */
 .chat-bubble-user {
-  border-radius: 18px 18px 0 18px !important;
+  border-radius: 1.5rem 0 1.5rem 1.5rem;
+  margin-left: auto;
+  line-height: 1.6;
 }
 
 .chat-bubble-assistant {
-  border-radius: 18px 18px 18px 0 !important;
+  border-radius: 0 1.5rem 1.5rem 1.5rem;
+  margin-right: auto;
+  line-height: 1.6;
 }
 
 /* 头像样式 */
@@ -176,12 +180,239 @@
   box-shadow: -1px 0 0 0 rgba(0, 0, 0, 0.08);
 }
 
+/* 移除之前可能导致阴影线的所有代码块样式 */
+.code-block-container {
+  box-shadow: none !important;
+  border: none !important;
+}
+
+pre {
+  margin: 0 !important;
+  border: none !important;
+  box-shadow: none !important;
+  outline: none !important;
+}
+
+pre.react-syntax-highlighter {
+  margin: 0 !important;
+  border: none !important;
+  box-shadow: none !important;
+  outline: none !important;
+}
+
+/* 其他通用代码块和语法高亮样式 */
+code {
+  font-family: var(--font-mono);
+  font-size: 0.9em;
+  font-variant-ligatures: none;
+}
+
+pre code {
+  width: 100%;
+  font-family: var(--font-mono);
+}
+
+/* 清除所有阴影和边框效果 */
+pre, .syntax-highlighter-wrapper, 
+.code-container, .code-wrapper, 
+.code-block, .code-block-container,
+.code-block * {
+  box-shadow: none !important;
+  border-bottom: none !important;
+  outline: none !important;
+}
+
+/* 确保代码块底部有圆角 */
+pre.react-syntax-highlighter {
+  border-bottom-left-radius: 0.75rem !important;
+  border-bottom-right-radius: 0.75rem !important;
+  overflow: hidden !important;
+  border-bottom: none !important;
+  border: none !important;
+  outline: none !important;
+}
+
+/* 消除任何底部线条 */
+.code-block-container::after,
+.code-block-container::before {
+  display: none !important;
+  content: none !important;
+}
+
+/* 清除可能影响圆角的样式 */
+pre.react-syntax-highlighter > code,
+pre.react-syntax-highlighter > div,
+pre.react-syntax-highlighter > * {
+  border-radius: 0 !important;
+}
+
+/* 代码行高亮效果 */
+pre code .highlight-line {
+  background-color: rgba(255, 255, 255, 0.05);
+  display: block;
+  margin: 0 -1rem;
+  padding: 0 1rem;
+}
+
+/* 代码块滚动条美化 */
+pre::-webkit-scrollbar {
+  height: 8px;
+  width: 8px;
+}
+
+pre::-webkit-scrollbar-track {
+  background-color: rgba(0, 0, 0, 0.05);
+  border-radius: 4px;
+}
+
+pre::-webkit-scrollbar-thumb {
+  background-color: rgba(0, 0, 0, 0.2);
+  border-radius: 4px;
+}
+
+pre::-webkit-scrollbar-thumb:hover {
+  background-color: rgba(0, 0, 0, 0.3);
+}
+
+.dark pre::-webkit-scrollbar-track {
+  background-color: rgba(255, 255, 255, 0.05);
+}
+
+.dark pre::-webkit-scrollbar-thumb {
+  background-color: rgba(255, 255, 255, 0.2);
+}
+
+.dark pre::-webkit-scrollbar-thumb:hover {
+  background-color: rgba(255, 255, 255, 0.3);
+}
+
+/* 增加文本间距 */
+p {
+  margin-bottom: 1rem;
+}
+
+li {
+  margin-bottom: 0.5rem;
+}
+
+/* 增加列表间距 */
+ul, ol {
+  margin-top: 1rem;
+  margin-bottom: 1.5rem;
+  padding-left: 1.5rem;
+}
+
+/* 增加标题间距 */
+h1, h2, h3, h4, h5, h6 {
+  margin-top: 2rem;
+  margin-bottom: 1rem;
+}
+
 @layer base {
   * {
     @apply border-border;
-    transition: background-color 0.3s ease, border-color 0.3s ease, color 0.2s ease;
   }
   body {
     @apply bg-background text-foreground;
+    font-size: 16px;
+    line-height: 1.6;
   }
+}
+
+/* 代码块中的行号样式 */
+.linenumber {
+  color: hsl(var(--muted-foreground) / 0.5);
+  min-width: 2.5em;
+  padding-right: 1em;
+  text-align: right;
+  user-select: none;
+}
+
+/* 统一代码块宽度 */
+.chat-bubble-assistant .prose pre,
+.chat-bubble-user .prose pre {
+  width: 100% !important;
+  max-width: 100% !important;
+}
+
+/* 代码块容器统一样式 */
+.code-block-container {
+  width: 100% !important;
+  max-width: 100% !important;
+  margin: 1rem 0 !important;
+}
+
+/* 确保代码块没有外部边框 */
+.prose > pre,
+.prose > div > pre,
+.prose > * > pre {
+  margin: 0 !important;
+  padding: 0 !important;
+  background: transparent !important;
+  border: none !important;
+  box-shadow: none !important;
+  border-radius: 0 !important;
+}
+
+/* 增强代码块视觉效果 */
+.react-syntax-highlighter-line-number {
+  opacity: 0.8;
+  font-style: italic;
+}
+
+/* 响应式代码块宽度 */
+@media (max-width: 768px) {
+  .chat-bubble-assistant .prose pre,
+  .chat-bubble-user .prose pre,
+  .code-block-container {
+    max-width: 100% !important;
+    width: 100% !important;
+  }
+  
+  .chat-bubble-user,
+  .chat-bubble-assistant {
+    max-width: 85% !important;
+  }
+}
+
+@media (min-width: 769px) and (max-width: 1280px) {
+  .chat-bubble-user,
+  .chat-bubble-assistant {
+    max-width: 80% !important;
+  }
+}
+
+@media (min-width: 1281px) {
+  .chat-bubble-user,
+  .chat-bubble-assistant {
+    max-width: 75% !important;
+  }
+}
+
+/* 完全消除代码块底部阴影线 */
+.my-6.relative > div[style] {
+  box-shadow: none !important;
+  border: none !important;
+  outline: none !important;
+}
+
+.my-6.relative > div[style]::after,
+.my-6.relative > div[style]::before {
+  display: none !important;
+  content: none !important;
+  box-shadow: none !important;
+  border: none !important;
+  outline: none !important;
+}
+
+.my-6.relative {
+  margin-bottom: 1.5rem !important;
+  box-shadow: none !important;
+}
+
+/* 消除底部透过的线 */
+.relative.z-10 {
+  border-bottom: none !important;
+  box-shadow: none !important;
+  outline: none !important;
 }
