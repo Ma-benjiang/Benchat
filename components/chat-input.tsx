@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useRef, useEffect } from "react"
-import { SendHorizontal, MessageSquare } from "lucide-react"
+import { SendHorizontal } from "lucide-react"
 import TextareaAutosize from "react-textarea-autosize"
 import { Button } from "@/components/ui/button"
 import { cn } from "@/lib/utils"
@@ -51,30 +51,26 @@ export function ChatInput() {
 
   return (
     <div className="relative w-full max-w-4xl mx-auto px-4 mb-8">
-      <div className="relative flex w-full items-center rounded-full border input-border-soft bg-background/70 backdrop-blur-sm shadow-sm">
-        
+      <div className="relative flex w-full items-center rounded-full border bg-background shadow-sm">
         {/* Text input */}
-        <div className="relative flex-1 flex items-center pl-4">
-          <MessageSquare className="h-4 w-4 mr-2 text-muted-foreground/60" />
-          <TextareaAutosize
-            ref={textareaRef}
-            placeholder="请输入您的问题、文件上传支持拖拽、粘贴、抢拍"
-            className={cn(
-              "flex w-full resize-none border-0 bg-transparent py-3",
-              "focus-visible:outline-none focus-visible:ring-0 focus-visible:ring-transparent",
-              "disabled:cursor-not-allowed disabled:opacity-50",
-              "text-sm"
-            )}
-            value={input}
-            onChange={handleInputChange}
-            onKeyDown={handleKeyDown}
-            onCompositionStart={handleCompositionStart}
-            onCompositionEnd={handleCompositionEnd}
-            disabled={isLoading}
-            rows={1}
-            maxRows={5}
-          />
-        </div>
+        <TextareaAutosize
+          ref={textareaRef}
+          placeholder="请输入您的问题..."
+          className={cn(
+            "flex w-full resize-none border-0 bg-transparent py-3 px-4",
+            "focus-visible:outline-none focus-visible:ring-0 focus-visible:ring-transparent",
+            "disabled:cursor-not-allowed disabled:opacity-50",
+            "text-sm"
+          )}
+          value={input}
+          onChange={handleInputChange}
+          onKeyDown={handleKeyDown}
+          onCompositionStart={handleCompositionStart}
+          onCompositionEnd={handleCompositionEnd}
+          disabled={isLoading}
+          rows={1}
+          maxRows={5}
+        />
         
         {/* Send button */}
         <Button

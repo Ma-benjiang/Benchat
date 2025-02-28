@@ -1,7 +1,20 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { Menu, X, User, Bot, Moon, Sun, ChevronDown, ChevronLeft, ChevronRight } from "lucide-react"
+import { 
+  MessageCircle, 
+  ArrowRightLeft, 
+  Menu, 
+  X, 
+  User, 
+  Bot, 
+  Moon, 
+  Sun, 
+  ChevronDown, 
+  ChevronLeft,
+  ChevronRight,
+  LogOut
+} from "lucide-react"
 import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
 import { ConversationsList } from "@/components/conversations-list"
@@ -22,9 +35,22 @@ import {
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { supabase } from "@/lib/supabase"
 
+// 定义模型类型
+type ModelProvider = "OpenAI" | "Anthropic" | "Gemini" | "DeepSeek";
+interface Model {
+  provider: ModelProvider;
+  name: string;
+  feature?: string;
+}
+
 export default function ChatPage() {
-  const [sidebarOpen, setSidebarOpen] = useState(true)
+  const [sidebarOpen, setSidebarOpen] = useState(false)
   const [mounted, setMounted] = useState(false)
+  const [modelMenuOpen, setModelMenuOpen] = useState(false)
+  const [currentModel, setCurrentModel] = useState<Model>({
+    provider: "Anthropic", 
+    name: "Claude 3.5 Sonnet"
+  })
 
   // Set mounted state after first render
   useEffect(() => {
@@ -33,7 +59,15 @@ export default function ChatPage() {
   
   return (
     <ChatProvider>
-      <ChatPageContent sidebarOpen={sidebarOpen} setSidebarOpen={setSidebarOpen} mounted={mounted} />
+      <ChatPageContent 
+        sidebarOpen={sidebarOpen} 
+        setSidebarOpen={setSidebarOpen} 
+        mounted={mounted} 
+        modelMenuOpen={modelMenuOpen} 
+        setModelMenuOpen={setModelMenuOpen} 
+        currentModel={currentModel} 
+        setCurrentModel={setCurrentModel} 
+      />
     </ChatProvider>
   )
 }
@@ -41,21 +75,24 @@ export default function ChatPage() {
 function ChatPageContent({ 
   sidebarOpen, 
   setSidebarOpen, 
-  mounted 
+  mounted,
+  modelMenuOpen,
+  setModelMenuOpen,
+  currentModel,
+  setCurrentModel
 }: { 
   sidebarOpen: boolean; 
   setSidebarOpen: (open: boolean) => void; 
   mounted: boolean;
+  modelMenuOpen: boolean;
+  setModelMenuOpen: (open: boolean) => void;
+  currentModel: Model;
+  setCurrentModel: (model: Model) => void;
 }) {
   const { messages, currentConversationId } = useChat()
   const { setTheme, theme } = useTheme()
   const router = useRouter()
   const [userData, setUserData] = useState<any>(null)
-  const [modelMenuOpen, setModelMenuOpen] = useState(false)
-  const [currentModel, setCurrentModel] = useState({
-    provider: "Anthropic",
-    name: "Claude 3 Opus"
-  })
   
   // 获取用户数据
   useEffect(() => {
@@ -108,52 +145,190 @@ function ChatPageContent({
         <span className="sr-only">打开侧边栏</span>
       </Button>
       
-      {/* 模型选择器 */}
-      <div className="fixed top-4 right-4 z-50">
+      {/* 模型选择器 - 固定位置，添加响应式样式 */}
+      <div className="fixed top-4 lg:left-80 left-20 z-50 hidden md:block">
         <DropdownMenu open={modelMenuOpen} onOpenChange={setModelMenuOpen}>
           <DropdownMenuTrigger asChild>
-            <Button variant="ghost" className="flex items-center gap-2 w-auto hover:bg-transparent">
-              <span className="font-medium">{currentModel.provider} {currentModel.name}</span>
-              <ChevronDown className="h-4 w-4" />
+            <Button variant="ghost" className="flex items-center gap-2 h-10 focus:outline-none">
+              <div className="flex items-center">
+                <span className="text-sm text-zinc-500">
+                  {currentModel.provider}
+                </span>
+              </div>
+              <span className="mx-1 text-xs text-zinc-400">/</span>
+              <span className="text-sm font-medium">{currentModel.name}</span>
+              <ChevronDown className="h-4 w-4 flex-shrink-0 ml-1" />
             </Button>
           </DropdownMenuTrigger>
-          <DropdownMenuContent align="end" className="w-56 border border-zinc-200 dark:border-zinc-700 shadow-sm bg-background rounded-lg">
-            <DropdownMenuItem 
-              onClick={() => {
-                setCurrentModel({provider: "Anthropic", name: "Claude 3 Opus"});
-                setModelMenuOpen(false);
-              }}
-              className="flex items-center justify-between"
-            >
-              <span>Anthropic Claude 3 Opus</span>
-              {currentModel.provider === "Anthropic" && currentModel.name === "Claude 3 Opus" && (
-                <div className="h-2 w-2 rounded-full bg-green-500"></div>
-              )}
-            </DropdownMenuItem>
-            <DropdownMenuItem 
-              onClick={() => {
-                setCurrentModel({provider: "Anthropic", name: "Claude 3 Sonnet"});
-                setModelMenuOpen(false);
-              }}
-              className="flex items-center justify-between"
-            >
-              <span>Anthropic Claude 3 Sonnet</span>
-              {currentModel.provider === "Anthropic" && currentModel.name === "Claude 3 Sonnet" && (
-                <div className="h-2 w-2 rounded-full bg-green-500"></div>
-              )}
-            </DropdownMenuItem>
-            <DropdownMenuItem 
-              onClick={() => {
-                setCurrentModel({provider: "Anthropic", name: "Claude 3 Haiku"});
-                setModelMenuOpen(false);
-              }}
-              className="flex items-center justify-between"
-            >
-              <span>Anthropic Claude 3 Haiku</span>
-              {currentModel.provider === "Anthropic" && currentModel.name === "Claude 3 Haiku" && (
-                <div className="h-2 w-2 rounded-full bg-green-500"></div>
-              )}
-            </DropdownMenuItem>
+          <DropdownMenuContent align="start" className="w-[600px] p-0 bg-amber-50 dark:bg-zinc-900 rounded-xl border border-zinc-200 dark:border-zinc-800 shadow-sm focus:outline-none ring-0 outline-none">
+            {/* 模型列表 - 显示所有模型 */}
+            <div className="p-6">
+              {/* 水平展示模型厂商 */}
+              <div className="grid grid-cols-4 gap-6">
+                {/* OpenAI Models */}
+                <div>
+                  <div className="text-sm font-medium text-zinc-800 dark:text-zinc-200 mb-4">OpenAI</div>
+                  <div className="flex flex-col space-y-5">
+                    <div 
+                      className="cursor-pointer focus:outline-none ring-0 outline-none group"
+                      onClick={() => {
+                        setCurrentModel({provider: "OpenAI", name: "GPT-o3 mini"});
+                        setModelMenuOpen(false);
+                      }}
+                    >
+                      <div className="whitespace-nowrap flex items-center justify-between">
+                        <span className={currentModel.provider === "OpenAI" && currentModel.name === "GPT-o3 mini" 
+                          ? "text-zinc-900 dark:text-zinc-100 text-sm font-medium" 
+                          : "text-zinc-600 dark:text-zinc-300 text-sm group-hover:text-zinc-900 dark:group-hover:text-zinc-100"}>
+                          GPT-o3 mini
+                        </span>
+                      </div>
+                    </div>
+                    <div 
+                      className="cursor-pointer focus:outline-none ring-0 outline-none group"
+                      onClick={() => {
+                        setCurrentModel({provider: "OpenAI", name: "GPT-o1 mini"});
+                        setModelMenuOpen(false);
+                      }}
+                    >
+                      <div className="whitespace-nowrap flex items-center justify-between">
+                        <span className={currentModel.provider === "OpenAI" && currentModel.name === "GPT-o1 mini" 
+                          ? "text-zinc-900 dark:text-zinc-100 text-sm font-medium" 
+                          : "text-zinc-600 dark:text-zinc-300 text-sm group-hover:text-zinc-900 dark:group-hover:text-zinc-100"}>
+                          GPT-o1 mini
+                        </span>
+                      </div>
+                    </div>
+                    <div 
+                      className="cursor-pointer focus:outline-none ring-0 outline-none group"
+                      onClick={() => {
+                        setCurrentModel({provider: "OpenAI", name: "GPT-4o mini"});
+                        setModelMenuOpen(false);
+                      }}
+                    >
+                      <div className="whitespace-nowrap flex items-center justify-between">
+                        <span className={currentModel.provider === "OpenAI" && currentModel.name === "GPT-4o mini" 
+                          ? "text-zinc-900 dark:text-zinc-100 text-sm font-medium" 
+                          : "text-zinc-600 dark:text-zinc-300 text-sm group-hover:text-zinc-900 dark:group-hover:text-zinc-100"}>
+                          GPT-4o mini
+                        </span>
+                      </div>
+                    </div>
+                    <div 
+                      className="cursor-pointer focus:outline-none ring-0 outline-none group"
+                      onClick={() => {
+                        setCurrentModel({provider: "OpenAI", name: "GPT-4o"});
+                        setModelMenuOpen(false);
+                      }}
+                    >
+                      <div className="whitespace-nowrap flex items-center justify-between">
+                        <span className={currentModel.provider === "OpenAI" && currentModel.name === "GPT-4o" 
+                          ? "text-zinc-900 dark:text-zinc-100 text-sm font-medium" 
+                          : "text-zinc-600 dark:text-zinc-300 text-sm group-hover:text-zinc-900 dark:group-hover:text-zinc-100"}>
+                          GPT-4o
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+                
+                {/* Anthropic Models */}
+                <div>
+                  <div className="text-sm font-medium text-zinc-800 dark:text-zinc-200 mb-4">Anthropic</div>
+                  <div className="flex flex-col space-y-5">
+                    <div 
+                      className="cursor-pointer focus:outline-none ring-0 outline-none group"
+                      onClick={() => {
+                        setCurrentModel({provider: "Anthropic", name: "Claude 3.5 Sonnet"});
+                        setModelMenuOpen(false);
+                      }}
+                    >
+                      <div className="whitespace-nowrap flex items-center justify-between">
+                        <span className={currentModel.provider === "Anthropic" && currentModel.name === "Claude 3.5 Sonnet" 
+                          ? "text-zinc-900 dark:text-zinc-100 text-sm font-medium" 
+                          : "text-zinc-600 dark:text-zinc-300 text-sm group-hover:text-zinc-900 dark:group-hover:text-zinc-100"}>
+                          Claude 3.5 Sonnet
+                        </span>
+                      </div>
+                    </div>
+                    <div 
+                      className="cursor-pointer focus:outline-none ring-0 outline-none group"
+                      onClick={() => {
+                        setCurrentModel({provider: "Anthropic", name: "Claude 3.7 Sonnet"});
+                        setModelMenuOpen(false);
+                      }}
+                    >
+                      <div className="whitespace-nowrap flex items-center justify-between">
+                        <span className={currentModel.provider === "Anthropic" && currentModel.name === "Claude 3.7 Sonnet" 
+                          ? "text-zinc-900 dark:text-zinc-100 text-sm font-medium" 
+                          : "text-zinc-600 dark:text-zinc-300 text-sm group-hover:text-zinc-900 dark:group-hover:text-zinc-100"}>
+                          Claude 3.7 Sonnet
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+                
+                {/* Gemini Models */}
+                <div>
+                  <div className="text-sm font-medium text-zinc-800 dark:text-zinc-200 mb-4">Gemini</div>
+                  <div className="flex flex-col space-y-5">
+                    <div 
+                      className="cursor-pointer focus:outline-none ring-0 outline-none group"
+                      onClick={() => {
+                        setCurrentModel({provider: "Gemini", name: "Gemini 2.0 Flash"});
+                        setModelMenuOpen(false);
+                      }}
+                    >
+                      <div className="whitespace-nowrap flex items-center justify-between">
+                        <span className={currentModel.provider === "Gemini" && currentModel.name === "Gemini 2.0 Flash" 
+                          ? "text-zinc-900 dark:text-zinc-100 text-sm font-medium" 
+                          : "text-zinc-600 dark:text-zinc-300 text-sm group-hover:text-zinc-900 dark:group-hover:text-zinc-100"}>
+                          Gemini 2.0 Flash
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+                
+                {/* DeepSeek Models */}
+                <div>
+                  <div className="text-sm font-medium text-zinc-800 dark:text-zinc-200 mb-4">DeepSeek</div>
+                  <div className="flex flex-col space-y-5">
+                    <div 
+                      className="cursor-pointer focus:outline-none ring-0 outline-none group"
+                      onClick={() => {
+                        setCurrentModel({provider: "DeepSeek", name: "DeepSeek R1"});
+                        setModelMenuOpen(false);
+                      }}
+                    >
+                      <div className="whitespace-nowrap flex items-center justify-between">
+                        <span className={currentModel.provider === "DeepSeek" && currentModel.name === "DeepSeek R1" 
+                          ? "text-zinc-900 dark:text-zinc-100 text-sm font-medium" 
+                          : "text-zinc-600 dark:text-zinc-300 text-sm group-hover:text-zinc-900 dark:group-hover:text-zinc-100"}>
+                          DeepSeek R1
+                        </span>
+                      </div>
+                    </div>
+                    <div 
+                      className="cursor-pointer focus:outline-none ring-0 outline-none group"
+                      onClick={() => {
+                        setCurrentModel({provider: "DeepSeek", name: "DeepSeek V3"});
+                        setModelMenuOpen(false);
+                      }}
+                    >
+                      <div className="whitespace-nowrap flex items-center justify-between">
+                        <span className={currentModel.provider === "DeepSeek" && currentModel.name === "DeepSeek V3" 
+                          ? "text-zinc-900 dark:text-zinc-100 text-sm font-medium" 
+                          : "text-zinc-600 dark:text-zinc-300 text-sm group-hover:text-zinc-900 dark:group-hover:text-zinc-100"}>
+                          DeepSeek V3
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
           </DropdownMenuContent>
         </DropdownMenu>
       </div>
@@ -161,7 +336,7 @@ function ChatPageContent({
       {/* Sidebar */}
       <div
         className={cn(
-          "h-screen z-50 flex w-72 flex-col bg-white dark:bg-zinc-950 shadow-md",
+          "h-screen z-50 flex w-72 flex-col bg-white dark:bg-zinc-950 shadow-sm border-r border-zinc-200 dark:border-zinc-800",
           sidebarOpen ? "translate-x-0" : "-translate-x-full",
           "transition-transform duration-200 ease-in-out",
           "fixed inset-y-0 left-0"
@@ -189,22 +364,22 @@ function ChatPageContent({
         </div>
         
         {/* Sidebar footer with avatar and username */}
-        <div className="border-t px-4 py-4">
+        <div className="border-t border-zinc-200 dark:border-zinc-800 px-4 py-3">
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <Button variant="ghost" className="w-full justify-start">
-                <div className="flex items-center">
-                  <div className="w-8 h-8 rounded-full bg-primary flex items-center justify-center text-primary-foreground mr-2">
-                    <User className="h-4 w-4" />
+              <Button variant="ghost" className="w-full p-2 justify-start hover:bg-zinc-100 dark:hover:bg-zinc-900 rounded-lg">
+                <div className="flex items-center gap-3">
+                  <div className="w-9 h-9 rounded-full bg-amber-100 dark:bg-zinc-800 flex items-center justify-center shrink-0">
+                    <User className="h-4 w-4 text-amber-700 dark:text-zinc-300" />
                   </div>
-                  <div className="flex flex-col items-start text-sm">
-                    <span className="font-medium">用户</span>
-                    <span className="text-xs text-muted-foreground">user@example.com</span>
+                  <div className="flex flex-col items-start">
+                    <span className="font-medium text-sm text-zinc-800 dark:text-zinc-200">用户</span>
+                    <span className="text-xs text-zinc-500 dark:text-zinc-400">user@example.com</span>
                   </div>
                 </div>
               </Button>
             </DropdownMenuTrigger>
-            <DropdownMenuContent align="start" className="w-56 border border-zinc-200 dark:border-zinc-700 shadow-sm bg-background rounded-lg">
+            <DropdownMenuContent align="start" className="w-56 border border-zinc-200 dark:border-zinc-700 shadow-sm bg-white dark:bg-zinc-950 rounded-lg focus:outline-none p-1">
               <DropdownMenuItem onClick={() => router.push('/profile')}>
                 <User className="mr-2 h-4 w-4" />
                 <span>个人中心</span>
@@ -233,7 +408,7 @@ function ChatPageContent({
           onClick={() => setSidebarOpen(!sidebarOpen)}
           variant="outline"
           size="icon"
-          className="h-10 w-6 rounded-l-none rounded-r-md bg-white dark:bg-zinc-900 border-l-0"
+          className="h-10 w-6 rounded-l-none rounded-r-md bg-white dark:bg-zinc-900 border-l-0 border-r-0 border-t-0 border-b-0"
         >
           {sidebarOpen ? (
             <ChevronLeft className="h-4 w-4" />
@@ -249,7 +424,7 @@ function ChatPageContent({
         "flex-1 flex flex-col relative transition-all duration-200 ease-in-out",
         sidebarOpen ? "lg:pl-72" : ""
       )}>
-        {/* Header */}
+        {/* Header - 恢复高度以适应模型选择器 */}
         <div className="h-16"></div>
         
         {/* Messages container */}

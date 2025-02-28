@@ -109,56 +109,8 @@ export function MessageContent({ message }: MessageContentProps) {
   }
 
   return (
-    <div className={cn(
-      "flex items-start gap-4 p-4 mb-3 mx-2 rounded-2xl",
-      message.role === 'user' 
-        ? "bg-background chat-message-user" 
-        : "bg-muted/30 chat-message-assistant"
-    )}>
-      {/* 发送者头像 */}
-      <div className={cn(
-        "flex h-9 w-9 shrink-0 select-none items-center justify-center rounded-full",
-        message.role === 'user' 
-          ? "bg-primary text-primary-foreground" 
-          : "bg-muted text-muted-foreground"
-      )}>
-        {message.role === 'user' ? (
-          <User className="h-5 w-5" />
-        ) : (
-          <Bot className="h-5 w-5" />
-        )}
-      </div>
-      
-      {/* 消息内容 */}
-      <div className="flex-1 space-y-2">
-        {/* 发送者信息和时间戳 */}
-        <div className="flex items-center gap-2">
-          <div className="font-medium">
-            {message.role === 'user' ? '你' : 'BenChat'}
-            {message.model && message.role === 'assistant' && (
-              <span className="ml-2 text-xs font-normal text-muted-foreground">
-                {message.model}
-              </span>
-            )}
-          </div>
-          <div className="text-xs text-muted-foreground">
-            {message.createdAt && (
-              <time dateTime={message.createdAt.toISOString()}>
-                {new Intl.DateTimeFormat('zh-CN', { 
-                  hour: '2-digit', 
-                  minute: '2-digit',
-                  hour12: false
-                }).format(message.createdAt)}
-              </time>
-            )}
-          </div>
-        </div>
-        
-        {/* 消息内容 */}
-        <div className="prose-container">
-          {renderContent()}
-        </div>
-      </div>
+    <div>
+      {renderContent()}
     </div>
   )
 }
