@@ -120,7 +120,16 @@ export function ChatMessages() {
               {message.role === "user" && (
                 <div className="flex items-start chat-message-animation flex-row-reverse">
                   <Avatar className="h-12 w-12 ml-3 overflow-hidden rounded-full">
-                    {mounted && config.userAvatar ? (
+                    {mounted && config.userAvatarUrl ? (
+                      <AvatarImage 
+                        src={config.userAvatarUrl} 
+                        alt={config.userName} 
+                        onError={(e) => {
+                          console.error("远程头像加载失败", e);
+                          (e.target as HTMLImageElement).style.display = 'none';
+                        }}
+                      />
+                    ) : mounted && config.userAvatar ? (
                       <AvatarImage 
                         src={config.userAvatar} 
                         alt={config.userName} 

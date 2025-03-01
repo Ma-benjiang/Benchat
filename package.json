@@ -3,10 +3,14 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "dev": "next dev -p 8080",
+    "dev": "next dev",
     "build": "next build",
-    "start": "next start -p 8080",
-    "lint": "next lint"
+    "start": "next start",
+    "lint": "next lint",
+    "init-storage": "node scripts/init-storage.js",
+    "setup-profiles": "node scripts/ensure-profiles-table.js",
+    "check-session": "node scripts/check-session.js",
+    "cleanup-avatars": "node scripts/cleanup-avatars.js"
   },
   "dependencies": {
     "@radix-ui/react-accordion": "^1.2.3",
@@ -25,9 +29,11 @@
     "@radix-ui/react-tabs": "^1.0.4",
     "@radix-ui/react-toast": "^1.1.5",
     "@supabase/auth-helpers-nextjs": "^0.8.7",
+    "@supabase/ssr": "^0.5.2",
     "@supabase/supabase-js": "^2.39.0",
     "class-variance-authority": "^0.7.0",
     "clsx": "^2.0.0",
+    "dotenv": "^16.4.7",
     "framer-motion": "^10.16.5",
     "lucide-react": "^0.293.0",
     "next": "14.0.3",
@@ -35,6 +41,7 @@
     "openai": "^4.86.1",
     "react": "^18",
     "react-dom": "^18",
+    "react-icons": "^5.5.0",
     "react-markdown": "^9.0.1",
     "react-syntax-highlighter": "^15.6.1",
     "react-textarea-autosize": "^8.5.3",

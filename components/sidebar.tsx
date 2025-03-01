@@ -42,14 +42,14 @@ export function Sidebar({ onReset }: SidebarProps) {
       )}
     >
       {/* Header */}
-      <div className="flex h-14 items-center border-b px-4">
+      <div className="flex h-14 items-center justify-center border-b">
         <div className="flex items-center gap-2">
           <div className="flex h-8 w-8 items-center justify-center rounded-full bg-primary">
             <span className="text-sm font-bold text-primary-foreground">B</span>
           </div>
-          {!isCollapsed && <span className="text-lg font-semibold">BenChat</span>}
+          {!isCollapsed && <span className="text-2xl font-semibold">BenChat</span>}
         </div>
-        <div className="ml-auto">
+        <div className="absolute right-4">
           <Button
             variant="ghost"
             size="icon"

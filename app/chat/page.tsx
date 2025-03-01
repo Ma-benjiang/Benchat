@@ -43,8 +43,9 @@ import {
 } from "@/components/ui/dialog"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { supabase } from "@/lib/supabase"
-import { UserProfileDialog } from "@/components/user-profile-dialog"
 import { UserDropdown } from "@/components/user-dropdown"
+import { useUserConfig } from "@/context/user-config-context"
+import { AuthRefresh } from "@/components/auth-refresh"
 
 // 定义模型类型
 type ModelProvider = "OpenAI" | "Anthropic" | "Gemini" | "DeepSeek";
@@ -105,8 +106,8 @@ function ChatPageContent({
   const [userData, setUserData] = useState<any>(null)
   const [modelMarketOpen, setModelMarketOpen] = useState(false)
   const [subscriptionPlanOpen, setSubscriptionPlanOpen] = useState(false)
-  const [profileDialogOpen, setProfileDialogOpen] = useState(false)
   const [isMobile, setIsMobile] = useState(false)
+  const { config, refreshUserAvatar } = useUserConfig()
   
   // 处理退出登录
   const handleLogout = async () => {
@@ -183,6 +184,9 @@ function ChatPageContent({
         const { data: { session } } = await supabase.auth.getSession()
         if (session) {
           setUserData(session.user)
+          
+          // 从服务器刷新头像
+          await refreshUserAvatar()
         }
       } catch (error) {
         console.error("Error loading user data:", error)
@@ -192,7 +196,7 @@ function ChatPageContent({
     if (mounted) {
       getUserData()
     }
-  }, [mounted])
+  }, [mounted, refreshUserAvatar])
   
   // 获取用户名首字母作为头像占位符
   const getUserInitial = () => {
@@ -484,7 +488,7 @@ function ChatPageContent({
         {/* Sidebar header */}
         <div className="flex items-center justify-between px-4 py-4 h-16">
           <div className="flex items-center gap-2">
-            <div className="text-primary font-bold text-xl">BenChat</div>
+            <div className="text-primary font-bold text-2xl">BenChat</div>
           </div>
           <Button
             onClick={() => setSidebarOpen(false)}
@@ -506,7 +510,6 @@ function ChatPageContent({
         <div className="border-t border-zinc-200 dark:border-zinc-800 px-4 py-3">
           <UserDropdown 
             email={userData?.email}
-            onProfileClick={() => setProfileDialogOpen(true)}
             onModelMarketClick={() => setModelMarketOpen(true)}
             onSubscriptionClick={() => setSubscriptionPlanOpen(true)}
             onLogout={handleLogout}
@@ -724,12 +727,6 @@ function ChatPageContent({
         </DialogContent>
       </Dialog>
       
-      {/* User Profile Dialog */}
-      <UserProfileDialog 
-        open={profileDialogOpen}
-        onOpenChange={setProfileDialogOpen}
-      />
-
       {/* Subscription Plan Dialog */}
       <Dialog open={subscriptionPlanOpen} onOpenChange={setSubscriptionPlanOpen}>
         <DialogContent className="sm:max-w-[850px] lg:max-w-[950px] bg-white dark:bg-zinc-950 p-0 rounded-xl border border-zinc-200 dark:border-zinc-800">
