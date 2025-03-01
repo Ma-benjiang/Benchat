@@ -76,7 +76,7 @@ export const useModelSettings = create<ModelSettingsStore>()(
         maxTokens: 4000,
         topP: 0.9,
         useSystemPrompt: true,
-        systemPrompt: "You are Claude, an AI assistant created by Anthropic to be helpful, harmless, and honest.",
+        systemPrompt: "You are Benchat, an AI assistant created to be helpful, harmless, and honest.",
         apiKeys: {}
       },
       updateSettings: (newSettings) =>

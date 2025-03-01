@@ -4,8 +4,10 @@ import { useState, useEffect } from "react"
 import { PlusCircle, Search, Clock, Trash2, ChevronDown } from "lucide-react"
 import { cn, formatDistanceToNow } from "@/lib/utils"
 import { useChat } from "@/context/chat-context"
+import { useUserConfig } from "@/context/user-config-context"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 
 export function ConversationsList() {
   const { 
@@ -16,6 +18,8 @@ export function ConversationsList() {
     deleteConversation
   } = useChat()
   
+  const { config } = useUserConfig()
+  
   const [confirmDelete, setConfirmDelete] = useState<string | null>(null)
   const [mounted, setMounted] = useState(false)
   const [search, setSearch] = useState("")
@@ -24,6 +28,18 @@ export function ConversationsList() {
   useEffect(() => {
     setMounted(true)
   }, [])
+
+  // 如果不是客户端，返回null或加载占位符
+  if (!mounted) {
+    return (
+      <div className="p-4 space-y-4">
+        <div className="h-10 w-full bg-gray-200 dark:bg-gray-700 animate-pulse rounded-md"></div>
+        {[1, 2, 3].map((i) => (
+          <div key={i} className="h-16 w-full bg-gray-200 dark:bg-gray-700 animate-pulse rounded-md"></div>
+        ))}
+      </div>
+    )
+  }
 
   const handleNewConversation = () => {
     createNewConversation()
@@ -117,6 +133,15 @@ export function ConversationsList() {
                   )}
                   onClick={() => handleSelectConversation(conversation.id)}
                 >
+                  <Avatar className="h-8 w-8 mr-2 flex-shrink-0">
+                    {config.assistantAvatar ? (
+                      <AvatarImage src={config.assistantAvatar} alt={config.assistantName} />
+                    ) : (
+                      <AvatarFallback className="avatar-assistant-bg text-white font-bold">
+                        {config.assistantName.charAt(0)}
+                      </AvatarFallback>
+                    )}
+                  </Avatar>
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center mb-1">
                       <div className="truncate font-medium">

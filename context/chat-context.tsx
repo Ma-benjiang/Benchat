@@ -67,6 +67,7 @@ interface ChatContextType {
   updateConversationModel: (id: string, modelId: string) => void
   availableModels: string[]
   selectModel: (id: string, modelId: string) => void
+  regenerateResponse: () => void
 }
 
 // Default value required by TypeScript
@@ -83,7 +84,8 @@ const defaultContext: ChatContextType = {
   deleteConversation: () => { },
   updateConversationModel: () => { },
   availableModels: [],
-  selectModel: () => { }
+  selectModel: () => { },
+  regenerateResponse: () => { }
 }
 
 const ChatContext = createContext<ChatContextType | undefined>(undefined)
@@ -596,6 +598,12 @@ export function ChatProvider({ children }: { children: ReactNode }) {
   // Reset error state
   const resetError = () => setError(null)
 
+  // Regenerate the last assistant response
+  const regenerateResponse = () => {
+    // 简单的实现：清除错误状态
+    resetError()
+  }
+
   return (
     <ChatContext.Provider
       value={{
@@ -611,7 +619,8 @@ export function ChatProvider({ children }: { children: ReactNode }) {
         deleteConversation,
         updateConversationModel,
         availableModels: Object.keys(modelMapping),
-        selectModel: (id: string, modelId: string) => updateConversationModel(id, modelId)
+        selectModel: (id: string, modelId: string) => updateConversationModel(id, modelId),
+        regenerateResponse
       }}
     >
       {children}

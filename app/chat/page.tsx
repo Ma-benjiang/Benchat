@@ -43,6 +43,8 @@ import {
 } from "@/components/ui/dialog"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { supabase } from "@/lib/supabase"
+import { UserProfileDialog } from "@/components/user-profile-dialog"
+import { UserDropdown } from "@/components/user-dropdown"
 
 // 定义模型类型
 type ModelProvider = "OpenAI" | "Anthropic" | "Gemini" | "DeepSeek";
@@ -56,14 +58,13 @@ interface Model {
 
 export function ChatPage() {
   const [sidebarOpen, setSidebarOpen] = useState(false)
-  const [mounted, setMounted] = useState(false)
   const [modelMenuOpen, setModelMenuOpen] = useState(false)
+  const [mounted, setMounted] = useState(false)
   const [currentModel, setCurrentModel] = useState<Model>({
-    provider: "DeepSeek", 
-    name: "DeepSeek V3"
+    provider: "DeepSeek",
+    name: "DeepSeek R1"
   })
-
-  // Set mounted state after first render
+  
   useEffect(() => {
     setMounted(true)
   }, [])
@@ -72,31 +73,31 @@ export function ChatPage() {
     <ChatPageContent 
       sidebarOpen={sidebarOpen} 
       setSidebarOpen={setSidebarOpen} 
-      mounted={mounted} 
       modelMenuOpen={modelMenuOpen} 
       setModelMenuOpen={setModelMenuOpen} 
       currentModel={currentModel} 
       setCurrentModel={setCurrentModel} 
+      mounted={mounted}
     />
   )
 }
 
-function ChatPageContent({ 
-  sidebarOpen, 
-  setSidebarOpen, 
-  mounted,
+function ChatPageContent({
+  sidebarOpen,
+  setSidebarOpen,
   modelMenuOpen,
   setModelMenuOpen,
   currentModel,
-  setCurrentModel
+  setCurrentModel,
+  mounted
 }: { 
   sidebarOpen: boolean; 
   setSidebarOpen: (open: boolean) => void; 
-  mounted: boolean;
   modelMenuOpen: boolean;
   setModelMenuOpen: (open: boolean) => void;
   currentModel: Model;
   setCurrentModel: (model: Model) => void;
+  mounted: boolean;
 }) {
   const { messages, currentConversationId, updateConversationModel, conversations } = useChat()
   const { setTheme, resolvedTheme } = useTheme()
@@ -104,7 +105,18 @@ function ChatPageContent({
   const [userData, setUserData] = useState<any>(null)
   const [modelMarketOpen, setModelMarketOpen] = useState(false)
   const [subscriptionPlanOpen, setSubscriptionPlanOpen] = useState(false)
+  const [profileDialogOpen, setProfileDialogOpen] = useState(false)
   const [isMobile, setIsMobile] = useState(false)
+  
+  // 处理退出登录
+  const handleLogout = async () => {
+    try {
+      await supabase.auth.signOut();
+      router.push('/login'); // 退出后重定向到登录页面
+    } catch (error) {
+      console.error('退出登录失败:', error);
+    }
+  };
   
   // Detect if we're on mobile
   useEffect(() => {
@@ -162,7 +174,7 @@ function ChatPageContent({
         console.log("从对话同步设置模型:", { modelName });
       }
     }
-  }, [currentConversationId, conversations]);
+  }, [currentConversationId, conversations, mounted]);
   
   // 获取用户数据
   useEffect(() => {
@@ -492,43 +504,13 @@ function ChatPageContent({
         
         {/* Sidebar footer with avatar and username */}
         <div className="border-t border-zinc-200 dark:border-zinc-800 px-4 py-3">
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button variant="ghost" className="w-full p-2 justify-start hover:bg-zinc-100 dark:hover:bg-zinc-900 rounded-lg">
-                <div className="flex items-center gap-3">
-                  <div className="w-9 h-9 rounded-full bg-amber-100 dark:bg-zinc-800 flex items-center justify-center shrink-0">
-                    <User className="h-4 w-4 text-amber-700 dark:text-zinc-300" />
-                  </div>
-                  <div className="flex flex-col items-start">
-                    <span className="font-medium text-sm text-zinc-800 dark:text-zinc-200">用户</span>
-                    <span className="text-xs text-zinc-500 dark:text-zinc-400">user@example.com</span>
-                  </div>
-                </div>
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="start" className="w-56 border border-zinc-200 dark:border-zinc-700 shadow-sm bg-white dark:bg-zinc-950 rounded-lg focus:outline-none p-1">
-              <DropdownMenuItem onClick={() => router.push('/profile')}>
-                <User className="mr-2 h-4 w-4" />
-                <span>个人中心</span>
-              </DropdownMenuItem>
-              <DropdownMenuItem onClick={() => setTheme(resolvedTheme === 'dark' ? 'light' : 'dark')}>
-                {resolvedTheme === 'dark' ? (
-                  <Sun className="mr-2 h-4 w-4" />
-                ) : (
-                  <Moon className="mr-2 h-4 w-4" />
-                )}
-                <span>{resolvedTheme === 'dark' ? '浅色模式' : '深色模式'}</span>
-              </DropdownMenuItem>
-              <DropdownMenuItem onClick={() => setModelMarketOpen(true)}>
-                <Store className="mr-2 h-4 w-4" />
-                <span>模型市场</span>
-              </DropdownMenuItem>
-              <DropdownMenuItem onClick={() => setSubscriptionPlanOpen(true)}>
-                <CreditCard className="mr-2 h-4 w-4" />
-                <span>套餐订阅</span>
-              </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
+          <UserDropdown 
+            email={userData?.email}
+            onProfileClick={() => setProfileDialogOpen(true)}
+            onModelMarketClick={() => setModelMarketOpen(true)}
+            onSubscriptionClick={() => setSubscriptionPlanOpen(true)}
+            onLogout={handleLogout}
+          />
         </div>
       </div>
       
@@ -742,6 +724,12 @@ function ChatPageContent({
         </DialogContent>
       </Dialog>
       
+      {/* User Profile Dialog */}
+      <UserProfileDialog 
+        open={profileDialogOpen}
+        onOpenChange={setProfileDialogOpen}
+      />
+
       {/* Subscription Plan Dialog */}
       <Dialog open={subscriptionPlanOpen} onOpenChange={setSubscriptionPlanOpen}>
         <DialogContent className="sm:max-w-[850px] lg:max-w-[950px] bg-white dark:bg-zinc-950 p-0 rounded-xl border border-zinc-200 dark:border-zinc-800">

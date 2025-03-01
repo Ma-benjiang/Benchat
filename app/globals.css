@@ -120,6 +120,54 @@
   font-weight: 500;
 }
 
+/* 优化头像和名字样式 */
+.avatar-name {
+  font-weight: 600;
+  font-size: 1rem;
+  line-height: 1.5;
+  transition: color 0.2s ease;
+}
+
+.avatar-model-tag {
+  font-size: 0.75rem;
+  color: #6b7280;
+  padding: 0.15rem 0.4rem;
+  white-space: nowrap;
+  transition: all 0.2s ease;
+  border-radius: 4px;
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+}
+
+.avatar-model-tag svg {
+  opacity: 0.7;
+}
+
+/* 头像阴影效果 */
+[class*="rounded-full"] {
+  box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.1);
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.dark [class*="rounded-full"] {
+  box-shadow: 0 0 0 2px rgba(0, 0, 0, 0.1);
+}
+
+[class*="rounded-full"]:hover {
+  transform: scale(1.05);
+  box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.2);
+}
+
+/* 自定义渐变背景头像 */
+.avatar-user-bg {
+  background: linear-gradient(135deg, #D4AF37 0%, #FCDA85 100%);
+}
+
+.avatar-assistant-bg {
+  background: linear-gradient(135deg, #6055D7 0%, #8C8CFF 100%);
+}
+
 /* Custom scrollbar */
 ::-webkit-scrollbar {
   width: 8px;
@@ -137,22 +185,6 @@
 
 ::-webkit-scrollbar-thumb:hover {
   background: hsl(var(--muted-foreground) / 0.5);
-}
-
-/* Chat message animations */
-.chat-message-animation {
-  animation: slideIn 0.4s ease-out;
-}
-
-@keyframes slideIn {
-  from {
-    opacity: 0;
-    transform: translateY(10px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
 }
 
 /* Thinking dots animation */
@@ -210,6 +242,49 @@ code {
 pre code {
   width: 100%;
   font-family: var(--font-mono);
+  white-space: pre !important;
+}
+
+pre code span {
+  white-space: pre !important;
+}
+
+.react-syntax-highlighter-line-number, 
+.react-syntax-highlighter-line, 
+.token-line {
+  white-space: pre !important;
+}
+
+.react-syntax-highlighter-code-line {
+  display: inline-block !important;
+  white-space: pre !important;
+}
+
+.react-syntax-highlighter {
+  overflow-x: auto !important;
+}
+
+/* 美化水平滚动条 */
+.react-syntax-highlighter::-webkit-scrollbar {
+  height: 6px !important;
+  background-color: transparent !important;
+}
+
+.react-syntax-highlighter::-webkit-scrollbar-thumb {
+  background-color: rgba(128, 128, 128, 0.3) !important;
+  border-radius: 3px !important;
+}
+
+.dark .react-syntax-highlighter::-webkit-scrollbar-thumb {
+  background-color: rgba(200, 200, 200, 0.3) !important;
+}
+
+.react-syntax-highlighter::-webkit-scrollbar-thumb:hover {
+  background-color: rgba(128, 128, 128, 0.5) !important;
+}
+
+.dark .react-syntax-highlighter::-webkit-scrollbar-thumb:hover {
+  background-color: rgba(200, 200, 200, 0.5) !important;
 }
 
 /* 清除所有阴影和边框效果 */
@@ -415,4 +490,20 @@ h1, h2, h3, h4, h5, h6 {
   border-bottom: none !important;
   box-shadow: none !important;
   outline: none !important;
+}
+
+/* Chat message animations */
+.chat-message-animation {
+  animation: slideIn 0.4s ease-out;
+}
+
+@keyframes slideIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }

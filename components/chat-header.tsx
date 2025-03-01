@@ -3,9 +3,12 @@
 import { Button } from "@/components/ui/button"
 import { Menu, Share, Download } from "lucide-react"
 import { useState } from "react"
+import { useUserConfig } from "@/context/user-config-context"
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 
 export function ChatHeader() {
   const [isMobileSidebarOpen, setMobileSidebarOpen] = useState(false)
+  const { config } = useUserConfig();
   
   return (
     <header className="h-14 border-b flex items-center justify-between px-4">
@@ -19,9 +22,20 @@ export function ChatHeader() {
           <Menu className="h-5 w-5" />
           <span className="sr-only">Toggle sidebar</span>
         </Button>
-        <div>
-          <h2 className="text-sm font-medium">Chat</h2>
-          <p className="text-xs text-muted-foreground">Claude</p>
+        <div className="flex items-center">
+          <Avatar className="h-8 w-8 mr-2">
+            {config.assistantAvatar ? (
+              <AvatarImage src={config.assistantAvatar} alt={config.assistantName} />
+            ) : (
+              <AvatarFallback className="avatar-assistant-bg text-white font-bold">
+                {config.assistantName.charAt(0)}
+              </AvatarFallback>
+            )}
+          </Avatar>
+          <div>
+            <h2 className="text-sm font-medium">{config.assistantName}</h2>
+            <p className="text-xs text-muted-foreground">AI 助手</p>
+          </div>
         </div>
       </div>
       

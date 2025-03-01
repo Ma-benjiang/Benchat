@@ -3,6 +3,8 @@ import { Inter } from "next/font/google"
 import "./globals.css"
 import { ThemeProvider } from "@/components/theme-provider"
 import { Toaster } from "@/components/ui/toaster"
+import { UserConfigProvider } from "@/context/user-config-context"
+import { Toaster as SonnerToaster } from "sonner"
 
 const inter = Inter({ subsets: ["latin"] })
 
@@ -23,8 +25,11 @@ export default function RootLayout({
       </head>
       <body className={inter.className}>
         <ThemeProvider>
-          {children}
-          <Toaster />
+          <UserConfigProvider>
+            {children}
+            <Toaster />
+            <SonnerToaster position="top-center" />
+          </UserConfigProvider>
         </ThemeProvider>
       </body>
     </html>

@@ -74,10 +74,10 @@ export function CodeBlock({ language, value, className }: CodeBlockProps) {
       {/* 语言标识和复制按钮 */}
       <div className="flex items-center justify-between px-4 py-2 bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500 dark:from-indigo-900 dark:via-purple-900 dark:to-pink-900 text-white rounded-t-xl z-10 relative">
         <div className="text-xs font-medium flex items-center">
-          <span className="inline-block w-2.5 h-2.5 rounded-full bg-red-500 mr-1"></span>
-          <span className="inline-block w-2.5 h-2.5 rounded-full bg-yellow-500 mr-1"></span>
-          <span className="inline-block w-2.5 h-2.5 rounded-full bg-green-500 mr-1"></span>
-          <span className="ml-3 bg-white/20 px-2 py-0.5 rounded text-xs uppercase font-semibold tracking-wider">{language}</span>
+          <div className="inline-block w-2.5 h-2.5 rounded-full bg-red-500 mr-1"></div>
+          <div className="inline-block w-2.5 h-2.5 rounded-full bg-yellow-500 mr-1"></div>
+          <div className="inline-block w-2.5 h-2.5 rounded-full bg-green-500 mr-1"></div>
+          <div className="ml-3 bg-white/20 px-2 py-0.5 rounded text-xs uppercase font-semibold tracking-wider">{language}</div>
         </div>
         <Button
           variant="ghost"
@@ -90,9 +90,9 @@ export function CodeBlock({ language, value, className }: CodeBlockProps) {
           ) : (
             <Copy className="h-4 w-4" />
           )}
-          <span className="sr-only">
+          <div className="sr-only">
             {copied ? "已复制" : "复制代码"}
-          </span>
+          </div>
         </Button>
       </div>
       
@@ -116,11 +116,13 @@ export function CodeBlock({ language, value, className }: CodeBlockProps) {
             border: 'none',
             borderRadius: 0,
             boxShadow: 'none',
+            overflowX: 'auto',
+            whiteSpace: 'pre',
           } as CSSProperties}
           showLineNumbers={normalizedLanguage !== 'text'}
-          wrapLines={true}
-          lineProps={{style: {wordBreak: 'break-all', whiteSpace: 'pre-wrap'} as CSSProperties}}
-          codeTagProps={{className: 'text-sm'}}
+          wrapLines={false}
+          wrapLongLines={false}
+          lineProps={{style: {whiteSpace: 'pre'} as CSSProperties}}
           lineNumberStyle={{
             minWidth: '2.5em', 
             paddingRight: '1.25em', 
@@ -132,6 +134,7 @@ export function CodeBlock({ language, value, className }: CodeBlockProps) {
             paddingTop: '0.25em',
             paddingBottom: '0.25em',
           } as CSSProperties}
+          codeTagProps={{className: 'text-sm', style: {whiteSpace: 'pre'}}}
         >
           {value}
         </SyntaxHighlighter>
