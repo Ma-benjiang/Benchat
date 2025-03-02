@@ -141,6 +141,7 @@ This project is licensed under the MIT License - see the LICENSE file for detail
 ## Acknowledgements
 
 - Inspired by [Claude](https://www.anthropic.com/claude)
+- Inspired by [Juchats](https://juchats.com/)
 - UI components from [shadcn/ui](https://ui.shadcn.com/)
 - Icons from [Lucide](https://lucide.dev/)
 - AI chat capabilities powered by [OpenRouter](https://openrouter.ai/)
