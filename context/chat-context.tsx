@@ -3,7 +3,7 @@
 import { createContext, useContext, useState, useEffect, ReactNode } from "react"
 import { uuid } from "@/lib/utils"
 import { useRouter } from "next/navigation"
-import { supabase, createConversation, deleteConversation as deleteConversationFromSupabase } from "@/lib/supabase"
+import { supabase, createConversation, deleteConversation as deleteConversationFromDb, createMessage } from "@/lib/supabase"
 
 // Get API key from environment
 const apiKey = process.env.NEXT_PUBLIC_OPENROUTER_API_KEY || '';
@@ -27,8 +27,8 @@ const modelMapping: Record<string, string> = {
   "Claude 3.5 Sonnet": "anthropic/claude-3.5-sonnet",
   "Claude 3.7 Sonnet": "anthropic/claude-3.7-sonnet",
   "Gemini 2.0 Flash": "google/gemini-2.0-flash-001",
-  "DeepSeek R1": "deepseek/deepseek-r1",
   "DeepSeek V3": "deepseek/deepseek-chat",
+  "DeepSeek R1": "deepseek/deepseek-r1"
 };
 
 export type MessageContent = {
@@ -92,161 +92,155 @@ const ChatContext = createContext<ChatContextType | undefined>(undefined)
 
 export function ChatProvider({ children }: { children: ReactNode }) {
   const [conversations, setConversations] = useState<Conversation[]>([])
-  const [currentConversationId, setCurrentConversationId] = useState<string | null>(null)
+  const [currentConversationId, _setCurrentConversationId] = useState<string | null>(null)
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const router = useRouter()
+
+  // Set current conversation ID and update URL
+  const setCurrentConversationId = (id: string) => {
+    // Find the conversation to get its model
+    const conversation = conversations.find(c => c.id === id);
+    
+    // Update current conversation ID
+    _setCurrentConversationId(id);
+    
+    // Update URL
+    router.push(`/chat/${id}`);
+  }
 
   // Get current messages from current conversation
   const messages = currentConversationId 
     ? conversations.find(c => c.id === currentConversationId)?.messages || []
     : []
 
-  // Initialize with a default conversation if none exists
+  // Initialize conversations from Supabase when component mounts
   useEffect(() => {
-    // 检查当前 URL 是否已经包含对话 ID
-    const currentPath = window.location.pathname;
-    const chatIdMatch = currentPath.match(/^\/chat\/([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})$/i);
-    const urlHasChatId = !!chatIdMatch;
-    
-    // 只在组件首次加载后，本地存储加载完成后运行此逻辑
-    const initializeConversation = () => {
-      // 如果 URL 中已经有对话 ID，则不创建新对话
-      if (urlHasChatId) {
-        console.log("URL 中已有对话 ID，不创建新对话");
-        return;
-      }
-      
-      if (conversations.length === 0) {
-        console.log("没有对话，创建新对话");
-        createNewConversation();
-      } else if (!currentConversationId) {
-        console.log("有对话但没有当前对话ID，设置第一个对话为当前对话");
-        setCurrentConversationId(conversations[0].id);
+    const loadConversations = async () => {
+      try {
+        const { data: session } = await supabase.auth.getSession();
+        if (session?.session?.user) {
+          const { data: conversations, error } = await supabase
+            .from('conversations')
+            .select('*, messages(*)')
+            .eq('user_id', session.session.user.id)
+            .order('created_at', { ascending: false });
+
+          if (error) {
+            console.error('Failed to load conversations', error);
+            setError('Failed to load conversations');
+            return;
+          }
+
+          if (conversations) {
+            const formattedConversations = conversations.map(conv => {
+              // 格式化消息
+              const formattedMessages = (conv.messages || []).map((msg: any) => ({
+                id: msg.id,
+                role: msg.role,
+                content: [{ type: "text", text: msg.content }],
+                createdAt: new Date(msg.created_at),
+                model: msg.model
+              }));
+
+              // 找到第一条用户消息作为标题
+              const firstUserMessage = formattedMessages.find((msg: Message) => msg.role === 'user');
+              const title = firstUserMessage ? firstUserMessage.content[0].text : "新对话";
+
+              return {
+                id: conv.id,
+                title: title,
+                messages: formattedMessages,
+                createdAt: new Date(conv.created_at),
+                updatedAt: new Date(conv.updated_at),
+                modelId: conv.model_id
+              };
+            });
+            
+            console.log("Loaded conversations with messages:", formattedConversations);
+            setConversations(formattedConversations);
+            
+            // Set first conversation as current if exists
+            if (formattedConversations.length > 0) {
+              _setCurrentConversationId(formattedConversations[0].id);
+            }
+          }
+        }
+      } catch (err) {
+        console.error('Error loading conversations:', err);
+        setError('Error loading conversations');
       }
     };
 
-    // 添加一个小延迟，确保本地存储的对话已经加载完成
-    const timer = setTimeout(initializeConversation, 100);
-    return () => clearTimeout(timer);
-  }, [conversations.length, currentConversationId]);
+    loadConversations();
+  }, []);
 
-  // Load conversations from local storage on mount
-  useEffect(() => {
-    const savedConversations = localStorage.getItem('benchat_conversations')
-    if (savedConversations) {
-      try {
-        const parsed = JSON.parse(savedConversations)
-        // Convert date strings back to Date objects
-        const formattedConversations = parsed.map((conv: any) => ({
-          ...conv,
-          createdAt: new Date(conv.createdAt),
-          updatedAt: new Date(conv.updatedAt),
-          messages: conv.messages.map((msg: any) => ({
-            ...msg,
-            createdAt: new Date(msg.createdAt)
-          }))
-        }))
-        console.log("从本地存储加载对话", { count: formattedConversations.length });
-        setConversations(formattedConversations)
-        
-        // 尝试加载上次使用的对话ID
-        const lastConversationId = localStorage.getItem('benchat_current_conversation_id');
-        if (lastConversationId && formattedConversations.some((c: Conversation) => c.id === lastConversationId)) {
-          console.log("恢复上次使用的对话", { id: lastConversationId });
-          setCurrentConversationId(lastConversationId);
-        } else if (formattedConversations.length > 0) {
-          console.log("使用第一个对话", { id: formattedConversations[0].id });
-          setCurrentConversationId(formattedConversations[0].id);
-        }
-      } catch (error) {
-        console.error('Failed to parse saved conversations', error)
-      }
-    }
-  }, [])
-
-  // Save conversations to local storage when they change
-  useEffect(() => {
-    if (conversations.length > 0) {
-      localStorage.setItem('benchat_conversations', JSON.stringify(conversations))
-    }
-  }, [conversations])
-
-  // Save current conversation ID when it changes
+  // Update model selection when current conversation changes
   useEffect(() => {
     if (currentConversationId) {
-      console.log("保存当前对话ID", { id: currentConversationId });
-      localStorage.setItem('benchat_current_conversation_id', currentConversationId);
+      const currentConversation = conversations.find(c => c.id === currentConversationId);
+      if (currentConversation?.modelId) {
+        // Find the display name for the model ID
+        const displayName = Object.entries(modelMapping).find(([_, value]) => value === currentConversation.modelId)?.[0];
+        if (displayName) {
+          console.log("Updating model selection to:", displayName);
+        }
+      }
     }
-  }, [currentConversationId]);
+  }, [currentConversationId, conversations]);
 
   // Create a new conversation
   const createNewConversation = async (): Promise<string> => {
-    const id = uuid()
-    
-    console.log("创建新对话", { id });
+    // Check if user is logged in
+    const { data: session } = await supabase.auth.getSession();
+    if (!session?.session?.user) {
+      setError('Please login to create a conversation');
+      return '';
+    }
+
+    const id = uuid();
+    const userId = session.session.user.id;
     
     const newConversation: Conversation = {
       id,
-      title: "新对话",
+      title: "新对话", // 初始标题为"新对话"，在用户发送第一条消息时会更新
       messages: [],
       createdAt: new Date(),
       updatedAt: new Date(),
-      modelId: "deepseek/deepseek-chat" // 设置默认模型为 DeepSeek V3
+      modelId: "deepseek/deepseek-chat"
     }
     
-    // Save to local storage first for immediate UI update
-    setConversations(prev => {
-      const updated = [newConversation, ...prev];
-      console.log("更新后的对话列表:", updated.map((c: Conversation) => ({ id: c.id, modelId: c.modelId })));
-      // 更新本地存储
-      localStorage.setItem('benchat_conversations', JSON.stringify(updated));
-      return updated;
-    });
-    
-    setCurrentConversationId(id);
-    
-    // 只有当当前 URL 不是 /chat/{uuid} 格式时才更新 URL
-    const currentPath = window.location.pathname;
-    const isAlreadyOnChatPage = /^\/chat\/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(currentPath);
-    
-    if (!isAlreadyOnChatPage) {
-      console.log("更新 URL 为:", `/chat/${id}`);
-      router.push(`/chat/${id}`);
-    } else {
-      console.log("已经在对话页面，不更新 URL");
+    // Save to Supabase
+    const { error } = await createConversation(userId, newConversation.title);
+    if (error) {
+      console.error("Failed to save conversation to database", error);
+      setError("Failed to save conversation to database");
+      return '';
     }
     
-    // Save to Supabase if user is logged in
-    try {
-      const { data: session } = await supabase.auth.getSession();
-      if (session?.session?.user) {
-        const userId = session.session.user.id;
-        const { error } = await createConversation(userId, "新对话");
-        if (error) {
-          console.error("Failed to save conversation to database", error);
-          setError("Failed to save conversation to database");
-        }
-      }
-    } catch (err) {
-      console.error("Error saving conversation to database", err);
-    }
+    // Update local state
+    setConversations(prev => [newConversation, ...prev]);
+    _setCurrentConversationId(id);
     
-    console.log("新对话已创建", { 
-      id, 
-      conversationsLength: conversations.length + 1,
-      currentConversationId: id
-    });
+    // Always update URL for new conversation
+    router.push(`/chat/${id}`);
     
-    return id
+    return id;
   }
 
   // Update conversation model
   const updateConversationModel = (id: string, modelId: string): void => {
     console.log("尝试更新对话模型", { id, modelId, hasId: !!id, hasModelId: !!modelId });
     
-    // 检查当前对话列表
-    console.log("当前对话列表:", conversations.map((c: Conversation) => ({ id: c.id, modelId: c.modelId })));
+    // 确定实际的模型ID
+    const actualModelId = modelMapping[modelId] || modelId;
+    
+    // 检查是否需要更新
+    const conversation = conversations.find(c => c.id === id);
+    if (conversation?.modelId === actualModelId) {
+      console.log("模型未改变，跳过更新");
+      return;
+    }
     
     setConversations(prev => {
       const updated = prev.map((conversation: Conversation) => {
@@ -254,19 +248,17 @@ export function ChatProvider({ children }: { children: ReactNode }) {
           console.log("找到匹配的对话，正在更新模型", { 
             conversationId: conversation.id, 
             oldModelId: conversation.modelId, 
-            newModelId: modelId 
+            newModelId: actualModelId 
           });
           return {
             ...conversation,
-            modelId,
+            modelId: actualModelId,
             updatedAt: new Date()
           }
         }
         return conversation
       });
       
-      // 检查更新后的结果
-      console.log("更新后的对话列表:", updated.map((c: Conversation) => ({ id: c.id, modelId: c.modelId })));
       return updated;
     });
   }
@@ -284,22 +276,33 @@ export function ChatProvider({ children }: { children: ReactNode }) {
       return;
     }
     
-    // 检查是否已选择模型
+    // 如果没有选择模型，使用默认模型
     if (!currentConversation.modelId || currentConversation.modelId === "") {
-      console.log("未选择模型，无法发送消息", { 
-        modelId: currentConversation.modelId,
-        modelIdType: typeof currentConversation.modelId,
-        modelIdEmpty: currentConversation.modelId === ""
-      });
-      setError("请先选择一个AI模型再发送消息");
+      console.log("使用默认模型 deepseek/deepseek-chat");
+      currentConversation.modelId = "deepseek/deepseek-chat";
+      // 更新会话的模型设置
+      setConversations(prev => prev.map(conversation => {
+        if (conversation.id === currentConversationId) {
+          return {
+            ...conversation,
+            modelId: "deepseek/deepseek-chat"
+          };
+        }
+        return conversation;
+      }));
+    }
+
+    // Check if user is logged in
+    const { data: session } = await supabase.auth.getSession();
+    if (!session?.session?.user) {
+      setError('Please login to send messages');
       return;
     }
 
     console.log("准备发送消息", { 
       content, 
       conversationId: currentConversationId,
-      modelId: currentConversation.modelId,
-      modelIdEmpty: currentConversation.modelId === ""
+      modelId: currentConversation.modelId
     });
     
     // Create user message
@@ -310,19 +313,31 @@ export function ChatProvider({ children }: { children: ReactNode }) {
       createdAt: new Date()
     }
     
+    // Save user message to Supabase
+    const { error: userMessageError } = await createMessage(
+      currentConversationId,
+      content.trim(),
+      'user'
+    );
+
+    if (userMessageError) {
+      console.error("Failed to save user message to database:", userMessageError);
+      setError("Failed to save message to database");
+      return;
+    }
+    
     // Update conversation with user message
     setConversations(prev => prev.map(conversation => {
       if (conversation.id === currentConversationId) {
+        // 如果是第一条消息，将其作为对话标题
+        const isFirstMessage = conversation.messages.length === 0;
+        const newTitle = isFirstMessage ? content.trim() : conversation.title;
+        
         return {
           ...conversation,
           messages: [...conversation.messages, userMessage],
           updatedAt: new Date(),
-          // Update title with first message if this is the first message
-          title: conversation.messages.length === 0 
-            ? content.length > 30 
-              ? `${content.substring(0, 30)}...` 
-              : content
-            : conversation.title
+          title: newTitle
         }
       }
       return conversation
@@ -345,10 +360,22 @@ export function ChatProvider({ children }: { children: ReactNode }) {
       });
       
       // Get model ID from mapping or default to GPT-3.5
-      const modelName = currentConversation.modelId ;
-      const modelId = modelMapping[modelName]  ;
+      const modelName = currentConversation.modelId;
+      console.log("当前会话的模型设置:", { modelName });
+
+      // 如果modelId已经是API格式，直接使用；否则通过modelMapping查找
+      const modelId = Object.values(modelMapping).includes(modelName) 
+        ? modelName 
+        : modelMapping[modelName] || modelName;
       
-      console.log("Making API call with model:", modelId);
+      if (!modelId) {
+        const errorMsg = "无法确定要使用的模型";
+        console.error(errorMsg, { modelName, availableModels: modelMapping });
+        setError(errorMsg);
+        return;
+      }
+
+      console.log("准备调用API，使用模型:", { modelName, modelId });
       console.log("Messages:", JSON.stringify(apiMessages));
       console.log("API Configuration:", {
         apiKeyAvailable: !!apiKey,
@@ -366,7 +393,7 @@ export function ChatProvider({ children }: { children: ReactNode }) {
           content: [{ type: "text", text: "" }],
           createdAt: new Date(),
           model: currentConversation.modelId
-        };
+        }
         
         // 首先添加一个空的回复，之后会逐步更新
         setConversations(prev => prev.map(conversation => {
@@ -399,15 +426,12 @@ export function ChatProvider({ children }: { children: ReactNode }) {
         
         console.log("Response status:", response.status, response.statusText);
         
-        // 检查是否有网络问题
         if (!response.ok) {
           try {
-            // 尝试将响应解析为JSON
             const errorJson = await response.json();
             console.error("API error (JSON):", errorJson);
             throw new Error(`API request failed: ${response.status} ${response.statusText} - ${JSON.stringify(errorJson)}`);
           } catch (jsonError) {
-            // 如果不是JSON，获取纯文本
             const errorText = await response.text();
             console.error("API error (text):", errorText);
             throw new Error(`API request failed: ${response.status} ${response.statusText} - ${errorText}`);
@@ -416,7 +440,6 @@ export function ChatProvider({ children }: { children: ReactNode }) {
         
         console.log("流式响应开始接收");
         
-        // 处理流式响应
         const reader = response.body?.getReader();
         if (!reader) {
           throw new Error("Failed to get response reader");
@@ -429,36 +452,29 @@ export function ChatProvider({ children }: { children: ReactNode }) {
           const { done, value } = await reader.read();
           if (done) break;
           
-          // 解码收到的数据块
           const chunk = decoder.decode(value, { stream: true });
           console.log("收到数据块:", chunk.slice(0, 50) + (chunk.length > 50 ? "..." : ""));
           
-          // 处理SSE格式的数据
           const lines = chunk.split('\n').filter(line => line.trim() !== '');
           
           for (const line of lines) {
-            // 跳过注释或空行
             if (line.startsWith(':') || line.trim() === '') continue;
             
             if (line.startsWith('data: ')) {
               const data = line.slice(6);
-              // 跳过[DONE]消息
               if (data === '[DONE]') continue;
               
               try {
                 const parsedData = JSON.parse(data);
-                // 从Delta获取文本增量
                 const textDelta = parsedData.choices[0]?.delta?.content || '';
                 
                 if (textDelta) {
-                  // 添加到完整文本
                   fullText += textDelta;
                   
                   // 更新UI中的消息
                   setConversations(prev => prev.map(conversation => {
                     if (conversation.id === currentConversationId) {
                       const updatedMessages = [...conversation.messages];
-                      // 找到并更新最后一条消息
                       const lastMessageIndex = updatedMessages.length - 1;
                       if (lastMessageIndex >= 0 && updatedMessages[lastMessageIndex].id === pendingAssistantMessage.id) {
                         updatedMessages[lastMessageIndex] = {
@@ -484,6 +500,19 @@ export function ChatProvider({ children }: { children: ReactNode }) {
         }
         
         console.log("流式响应接收完成");
+
+        // Save assistant message to Supabase
+        const { error: assistantMessageError } = await createMessage(
+          currentConversationId,
+          fullText,
+          'assistant'
+        );
+
+        if (assistantMessageError) {
+          console.error("Failed to save assistant message to database:", assistantMessageError);
+          // Don't return here, as the message is already shown to the user
+        }
+
       } catch (apiError) {
         console.error('API call error:', apiError);
         throw apiError;
@@ -491,20 +520,17 @@ export function ChatProvider({ children }: { children: ReactNode }) {
     } catch (error) {
       console.error('Error sending message:', error);
       
-      // Create more descriptive error message
       let errorText = "Sorry, there was an error processing your request. ";
       
       if (error instanceof Error) {
         errorText += `Error details: ${error.message}`;
         console.log("Full error:", error);
         
-        // Additional debugging for network errors
         if (error.name === 'TypeError' && error.message.includes('fetch')) {
           console.log("Network error detected - possible CORS or connectivity issue");
           errorText += " (Network connectivity error)";
         }
         
-        // Check for API key issues
         if (error.message.includes('authentication') || error.message.includes('api key') || error.message.includes('apiKey')) {
           console.log("API authentication error detected");
           errorText += " (API authentication error)";
@@ -513,7 +539,6 @@ export function ChatProvider({ children }: { children: ReactNode }) {
         errorText += "Please check your API key and network connection.";
       }
       
-      // Create error message
       const errorMessage: Message = {
         id: uuid(),
         role: "assistant",
@@ -569,28 +594,47 @@ export function ChatProvider({ children }: { children: ReactNode }) {
 
   // Delete a conversation
   const deleteConversation = (id: string) => {
-    // 立即更新本地状态，提高 UI 响应速度
-    setConversations(prev => prev.filter(conversation => conversation.id !== id))
+    // Store current state for recovery
+    const previousState = {
+      conversations: [...conversations],
+      currentId: currentConversationId
+    };
+
+    // Immediately update UI
+    setConversations(prev => prev.filter(conversation => conversation.id !== id));
     
-    // If the deleted conversation was the current one, set the current to the first available conversation or null
     if (currentConversationId === id) {
-      const remaining = conversations.filter(conversation => conversation.id !== id)
-      setCurrentConversationId(remaining.length > 0 ? remaining[0].id : null)
+      const remaining = conversations.filter(conversation => conversation.id !== id);
+      _setCurrentConversationId(remaining.length > 0 ? remaining[0].id : null);
     }
-    
-    // 异步删除 Supabase 中的对话
+
+    if (conversations.length <= 1) {
+      router.push('/chat');
+    }
+
+    // Async delete from database
     (async () => {
       try {
         const { data: session } = await supabase.auth.getSession();
-        if (session?.session?.user) {
-          const { error } = await deleteConversationFromSupabase(id);
-          if (error) {
-            console.error("Failed to delete conversation from database", error);
-            setError("Failed to delete conversation from database");
-          }
+        if (!session?.session?.user) {
+          setConversations(previousState.conversations);
+          _setCurrentConversationId(previousState.currentId);
+          setError('Please login to delete a conversation');
+          return;
+        }
+
+        const { error } = await deleteConversationFromDb(id);
+        if (error) {
+          console.error("Failed to delete conversation from database:", error);
+          setConversations(previousState.conversations);
+          _setCurrentConversationId(previousState.currentId);
+          setError("Failed to delete conversation from database");
         }
       } catch (err) {
-        console.error("Error deleting conversation from database", err);
+        console.error("Error in deleteConversation:", err);
+        setConversations(previousState.conversations);
+        _setCurrentConversationId(previousState.currentId);
+        setError("An error occurred while deleting the conversation");
       }
     })();
   }
