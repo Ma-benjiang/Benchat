@@ -1,6 +1,6 @@
-# Claude Clone
+# Benchat 
 
-A beautiful, feature-rich AI assistant web application inspired by Claude. This project is built with a modern tech stack including Next.js, Tailwind CSS, Shadcn UI, Supabase, and designed for deployment on Vercel.
+A beautiful, feature-rich AI assistant web application inspired by Juchats. This project is built with a modern tech stack including Next.js, Tailwind CSS, Shadcn UI, Supabase, and designed for deployment on Vercel.
 
 ## Features
 
