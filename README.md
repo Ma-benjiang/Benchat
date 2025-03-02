@@ -33,8 +33,8 @@ A beautiful, feature-rich AI assistant web application inspired by Juchats. This
 1. Clone the repository:
 
 ```bash
-git clone https://github.com/yourusername/claude-clone.git
-cd claude-clone
+git clone https://github.com/Ma-benjiang/Benchat.git
+cd Benchat
 ```
 
 2. Install dependencies:

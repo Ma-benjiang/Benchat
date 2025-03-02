@@ -78,7 +78,7 @@ export default function RegisterPage() {
               Create your account
             </h1>
             <p className="mt-2 text-muted-foreground">
-              Get started with Claude AI assistant today
+              Get started with Benchat AI assistant today
             </p>
           </div>
           

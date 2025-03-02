@@ -63,7 +63,7 @@ export function ChatPage() {
   const [mounted, setMounted] = useState(false)
   const [currentModel, setCurrentModel] = useState<Model>({
     provider: "DeepSeek",
-    name: "DeepSeek R1"
+    name: "DeepSeek V3"
   })
   
   useEffect(() => {

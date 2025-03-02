@@ -91,7 +91,7 @@ export function ChatMessages() {
                       <span className="avatar-name font-bold">{config.assistantName || "Benchat"}</span>
                       <div className="avatar-model-tag bg-slate-100 dark:bg-slate-800 rounded flex items-center gap-1">
                         <FileText className="h-4 w-4" />
-                        DeepSeek R1
+                        DeepSeek V3
                       </div>
                     </div>
                     
@@ -150,7 +150,7 @@ export function ChatMessages() {
                       <span className="avatar-name font-bold">{config.userName}</span>
                       <div className="avatar-model-tag bg-slate-100 dark:bg-slate-800 rounded flex items-center gap-1">
                         <FileText className="h-4 w-4" />
-                        DeepSeek R1
+                        DeepSeek V3
                       </div>
                     </div>
                     
@@ -194,7 +194,7 @@ export function ChatMessages() {
                   <span className="avatar-name font-bold">{config.assistantName || "Benchat"}</span>
                   <div className="avatar-model-tag bg-slate-100 dark:bg-slate-800 rounded flex items-center gap-1">
                     <FileText className="h-4 w-4" />
-                    DeepSeek R1
+                    DeepSeek V3
                   </div>
                 </div>
                 <div className="chat-bubble-assistant bg-muted dark:bg-muted/30 px-4 py-3 rounded-md">
