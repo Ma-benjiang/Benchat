@@ -103,16 +103,48 @@ export function MessageContent({ message }: MessageContentProps) {
     return renderText(text);
   }
 
+  const getModelLogo = (model: string | undefined): string => {
+    if (!model) return '/images/logos/deepseek-color.svg';
+    if (model.includes('deepseek')) return '/images/logos/deepseek-color.svg';
+    if (model.includes('claude')) return '/images/logos/claude-color.svg';
+    if (model.includes('gemini')) return '/images/logos/gemini-color.svg';
+    if (model.includes('gpt') || model.includes('openai')) return '/images/logos/openai.svg';
+    return '/images/logos/deepseek-color.svg';
+  };
+
   return (
     <div className="flex gap-3">
       <div className="flex-shrink-0 mt-1">
         {message.role === "user" ? (
-          <div className="w-8 h-8 rounded-full bg-blue-500 flex items-center justify-center">
-            <User className="h-5 w-5 text-white" />
+          <div className="w-8 h-8 rounded-full overflow-hidden">
+            {config.userAvatarUrl ? (
+              <img 
+                src={config.userAvatarUrl} 
+                alt={config.userName}
+                className="w-full h-full object-cover"
+                onError={(e) => {
+                  const target = e.currentTarget;
+                  const parent = target.parentElement;
+                  if (parent) {
+                    target.src = '';
+                    parent.classList.add('bg-blue-500', 'flex', 'items-center', 'justify-center');
+                    parent.innerHTML = '<div class="h-5 w-5 text-white"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="h-5 w-5"><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg></div>';
+                  }
+                }}
+              />
+            ) : (
+              <div className="w-full h-full bg-blue-500 flex items-center justify-center">
+                <User className="h-5 w-5 text-white" />
+              </div>
+            )}
           </div>
         ) : (
-          <div className="w-8 h-8 rounded-full bg-amber-500 flex items-center justify-center">
-            <Bot className="h-5 w-5 text-white" />
+          <div className="w-8 h-8 rounded-full overflow-hidden bg-white dark:bg-zinc-800 flex items-center justify-center">
+            <img 
+              src={getModelLogo(message.model)}
+              alt={message.model || 'AI'}
+              className="w-6 h-6 object-contain"
+            />
           </div>
         )}
       </div>
