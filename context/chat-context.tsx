@@ -61,7 +61,7 @@ interface ChatContextType {
   error: string | null
   resetError: () => void
   createNewConversation: () => Promise<string>
-  setCurrentConversationId: (id: string) => void
+  setCurrentConversationId: (id: string | null) => void
   sendMessage: (content: string) => Promise<void>
   deleteConversation: (id: string) => void
   updateConversationModel: (id: string, modelId: string) => void
@@ -98,15 +98,15 @@ export function ChatProvider({ children }: { children: ReactNode }) {
   const router = useRouter()
 
   // Set current conversation ID and update URL
-  const setCurrentConversationId = (id: string) => {
-    // Find the conversation to get its model
-    const conversation = conversations.find(c => c.id === id);
-    
-    // Update current conversation ID
+  const setCurrentConversationId = (id: string | null) => {
+    if (id) {
+      const conversation = conversations.find(c => c.id === id);
+      if (conversation && (!conversation.modelId || conversation.modelId === "")) {
+        // 如果对话没有设置模型，自动设置默认模型
+        updateConversationModel(id, "Claude 3.5 Sonnet");
+      }
+    }
     _setCurrentConversationId(id);
-    
-    // Update URL
-    router.push(`/chat/${id}`);
   }
 
   // Get current messages from current conversation

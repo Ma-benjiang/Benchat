@@ -121,9 +121,9 @@ export function MessageContent({ message }: MessageContentProps) {
           <span className="font-bold">
             {message.role === "user" ? config.userName : (config.assistantName || "Benchat")}
           </span>
-          {message.model && message.role === "assistant" && (
+          {message.role === "assistant" && (
             <span className="ml-2 text-xs text-gray-500 dark:text-gray-400">
-              使用 {message.model}
+              使用 {message.model?.includes('/') ? message.model.split('/')[1] : 'DeepSeek V3'}
             </span>
           )}
         </div>

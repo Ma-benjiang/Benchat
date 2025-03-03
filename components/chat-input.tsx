@@ -18,14 +18,14 @@ export function ChatInput() {
 
   // 获取当前对话
   const currentConversation = conversations.find(c => c.id === currentConversationId);
-  // 修改这里的逻辑，确保只有当modelId存在且不为空字符串时才认为选择了模型
-  const isValidModel = !!currentConversation?.modelId && currentConversation.modelId !== "";
+  // 移除对模型的检查，只要有对话就可以输入
+  const isInputEnabled = !!currentConversationId && !isLoading;
   
   console.log("聊天输入框状态:", { 
     currentConversationId, 
     modelId: currentConversation?.modelId,
-    isValidModel,
-    isInputDisabled: !currentConversationId || isLoading || !isValidModel 
+    isInputEnabled,
+    isLoading 
   });
 
   console.log("ChatInput组件中的头像URL:", config.userAvatar);
@@ -48,14 +48,14 @@ export function ChatInput() {
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
     if (e.key === "Enter" && !e.shiftKey && !isComposing && mounted) {
-      if (isLoading || !isValidModel) return
+      if (isLoading || !isInputEnabled) return
       e.preventDefault()
       handleSend()
     }
   }
 
   const handleSend = () => {
-    if (!input.trim() || isLoading || !isValidModel) return
+    if (!input.trim() || isLoading || !isInputEnabled) return
 
     sendMessage(input)
     setInput("")
@@ -74,13 +74,13 @@ export function ChatInput() {
           tabIndex={0}
           onCompositionStart={handleCompositionStart}
           onCompositionEnd={handleCompositionEnd}
-          placeholder={isValidModel ? "发送消息..." : "请先选择模型..."}
+          placeholder={isInputEnabled ? "发送消息..." : "请先选择模型..."}
           className={cn(
             "flex-1 bg-transparent px-4 py-3 focus-visible:outline-none disabled:opacity-50 max-h-64 resize-none",
-            (!currentConversationId || !isValidModel) && "opacity-50 cursor-not-allowed"
+            (!currentConversationId || !isInputEnabled) && "opacity-50 cursor-not-allowed"
           )}
           value={input}
-          disabled={!currentConversationId || isLoading || !isValidModel}
+          disabled={!currentConversationId || isLoading || !isInputEnabled}
           autoFocus
           onChange={handleInputChange}
           onKeyDown={handleKeyDown}
@@ -89,7 +89,7 @@ export function ChatInput() {
           type="button"
           size="icon"
           className="mr-2"
-          disabled={!currentConversationId || isLoading || !input.trim() || !isValidModel}
+          disabled={!currentConversationId || isLoading || !input.trim() || !isInputEnabled}
           onClick={handleSend}
         >
           {isLoading ? (
