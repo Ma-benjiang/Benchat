@@ -1,6 +1,6 @@
 "use client"
 
-import { createContext, useContext, useState, useEffect, ReactNode } from "react"
+import { createContext, useContext, useState, useEffect, ReactNode, useMemo, useCallback } from "react"
 import { uuid } from "@/lib/utils"
 import { useRouter } from "next/navigation"
 import { supabase, createConversation, deleteConversation as deleteConversationFromDb, createMessage } from "@/lib/supabase"
@@ -97,22 +97,44 @@ export function ChatProvider({ children }: { children: ReactNode }) {
   const [error, setError] = useState<string | null>(null)
   const router = useRouter()
 
-  // Set current conversation ID and update URL
-  const setCurrentConversationId = (id: string | null) => {
-    if (id) {
-      const conversation = conversations.find(c => c.id === id);
-      if (conversation && (!conversation.modelId || conversation.modelId === "")) {
-        // 如果对话没有设置模型，自动设置默认模型
-        updateConversationModel(id, "Claude 3.5 Sonnet");
-      }
-    }
-    _setCurrentConversationId(id);
-  }
+  // Memoize current conversation
+  const currentConversation = useMemo(() => 
+    conversations.find(c => c.id === currentConversationId),
+    [conversations, currentConversationId]
+  );
 
-  // Get current messages from current conversation
-  const messages = currentConversationId 
-    ? conversations.find(c => c.id === currentConversationId)?.messages || []
-    : []
+  // Memoize messages
+  const messages = useMemo(() => 
+    currentConversation?.messages || [],
+    [currentConversation]
+  );
+
+  // Set current conversation ID and update URL
+  const setCurrentConversationId = useCallback((id: string | null) => {
+    // 如果ID相同，不做任何操作
+    if (id === currentConversationId) return;
+
+    // 批量更新状态
+    const conversation = conversations.find(c => c.id === id);
+    
+    if (id) {
+      // 如果需要更新模型，先更新
+      if (conversation && (!conversation.modelId || conversation.modelId === "")) {
+        updateConversationModel(id, "DeepSeek V3");
+      }
+      
+      // 更新URL和当前对话ID
+      Promise.resolve().then(() => {
+        router.push(`/chat/${id}`);
+        _setCurrentConversationId(id);
+      });
+    } else {
+      Promise.resolve().then(() => {
+        router.push('/chat');
+        _setCurrentConversationId(null);
+      });
+    }
+  }, [currentConversationId, conversations, router]);
 
   // Initialize conversations from Supabase when component mounts
   useEffect(() => {
@@ -229,7 +251,7 @@ export function ChatProvider({ children }: { children: ReactNode }) {
   }
 
   // Update conversation model
-  const updateConversationModel = (id: string, modelId: string): void => {
+  const updateConversationModel = useCallback((id: string, modelId: string): void => {
     console.log("尝试更新对话模型", { id, modelId, hasId: !!id, hasModelId: !!modelId });
     
     // 确定实际的模型ID
@@ -242,26 +264,17 @@ export function ChatProvider({ children }: { children: ReactNode }) {
       return;
     }
     
-    setConversations(prev => {
-      const updated = prev.map((conversation: Conversation) => {
-        if (conversation.id === id) {
-          console.log("找到匹配的对话，正在更新模型", { 
-            conversationId: conversation.id, 
-            oldModelId: conversation.modelId, 
-            newModelId: actualModelId 
-          });
-          return {
-            ...conversation,
-            modelId: actualModelId,
-            updatedAt: new Date()
-          }
+    setConversations(prev => prev.map(conversation => {
+      if (conversation.id === id) {
+        return {
+          ...conversation,
+          modelId: actualModelId,
+          updatedAt: new Date()
         }
-        return conversation
-      });
-      
-      return updated;
-    });
-  }
+      }
+      return conversation;
+    }));
+  }, [conversations]);
 
   // Send a new message
   const sendMessage = async (content: string) => {
