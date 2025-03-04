@@ -15,5 +15,4 @@ yarn-error.log*
 
 # OS specific
 .DS_Store
-.env
 .vscode
